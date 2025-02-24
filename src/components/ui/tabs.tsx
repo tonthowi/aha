@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as TabsPrimitive from '@radix-ui/react-tabs';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const Tabs = TabsPrimitive.Root;
@@ -11,7 +12,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      'inline-flex items-center justify-center rounded-lg bg-gray-200 p-1',
+      'relative inline-flex items-center justify-center rounded-xl bg-gray-200 p-1',
       className
     )}
     aria-label="Content filter tabs"
@@ -28,19 +29,15 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-all',
+      'relative inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-all',
       'text-gray-600 hover:text-gray-900',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-      'data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:rounded-xl',
+      'data-[state=active]:bg-white data-[state=active]:rounded-xl data-[state=active]:text-gray-900 data-[state=active]:shadow-sm',
       className
     )}
-    role="tab"
-    aria-selected="false"
-    data-state="inactive"
     {...props}
   >
     {children}
-    <span className="sr-only">{` tab`}</span>
   </TabsPrimitive.Trigger>
 ));
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;

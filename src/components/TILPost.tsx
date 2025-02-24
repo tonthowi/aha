@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import { HeartIcon, ChatBubbleLeftIcon, ArrowPathIcon, BookmarkIcon, LockClosedIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon, BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 import { PostDetailModal } from './PostDetailModal';
@@ -122,13 +123,17 @@ export const TILPost: React.FC<TILPostProps> = ({
 
   return (
     <>
-      <article
+      <motion.article
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        whileHover={{ scale: 1.01 }}
         className="p-6 cursor-pointer bg-white hover:bg-gray-50 transition-colors rounded-2xl"
         onClick={() => setIsDetailOpen(true)}
         tabIndex={0}
         role="button"
         aria-label={`View details of post: ${post.title}`}
-        onKeyDown={(e) => {
+        onKeyDown={(e: React.KeyboardEvent) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             setIsDetailOpen(true);
@@ -191,25 +196,38 @@ export const TILPost: React.FC<TILPostProps> = ({
 
             <div className="flex items-center justify-between mt-3" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center gap-10">
-                <button
+                <motion.button
                   onClick={onLike}
+                  whileTap={{ scale: 0.9 }}
                   className="group flex items-center gap-2 text-gray-500"
                   aria-label={`${isLiked ? 'Unlike' : 'Like'} post (${post.likes + (isLiked ? 1 : 0)} likes)`}
                   aria-pressed={isLiked}
                 >
-                  <div className="p-2 -m-2 group-hover:bg-red-50 rounded-full transition-colors">
+                  <motion.div 
+                    className="p-2 -m-2 group-hover:bg-red-50 rounded-full transition-colors"
+                    animate={isLiked ? { scale: [1, 1.2, 1] } : {}}
+                  >
                     {isLiked ? (
                       <HeartSolidIcon className="w-5 h-5 text-red-500" aria-hidden="true" />
                     ) : (
                       <HeartIcon className="w-5 h-5 group-hover:text-red-500" aria-hidden="true" />
                     )}
-                  </div>
-                  <span className={`text-sm ${isLiked ? 'text-red-500' : 'group-hover:text-red-500'}`}>
-                    {post.likes + (isLiked ? 1 : 0)}
-                  </span>
-                </button>
+                  </motion.div>
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={post.likes + (isLiked ? 1 : 0)}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className={`text-sm ${isLiked ? 'text-red-500' : 'group-hover:text-red-500'}`}
+                    >
+                      {post.likes + (isLiked ? 1 : 0)}
+                    </motion.span>
+                  </AnimatePresence>
+                </motion.button>
 
-                <button 
+                <motion.button 
+                  whileTap={{ scale: 0.9 }}
                   className="group flex items-center gap-2 text-gray-500"
                   aria-label={`${post.comments} comments`}
                 >
@@ -217,36 +235,41 @@ export const TILPost: React.FC<TILPostProps> = ({
                     <ChatBubbleLeftIcon className="w-5 h-5 group-hover:text-blue-500" aria-hidden="true" />
                   </div>
                   <span className="text-sm group-hover:text-blue-500">{post.comments}</span>
-                </button>
+                </motion.button>
 
-                <button 
+                <motion.button 
+                  whileTap={{ scale: 0.9 }}
                   className="group flex items-center gap-2 text-gray-500"
                   aria-label="Share post"
                 >
                   <div className="p-2 -m-2 group-hover:bg-green-50 rounded-full transition-colors">
                     <ArrowPathIcon className="w-5 h-5 group-hover:text-green-500" aria-hidden="true" />
                   </div>
-                </button>
+                </motion.button>
               </div>
 
-              <button
+              <motion.button
+                whileTap={{ scale: 0.9 }}
                 onClick={onBookmark}
                 className="group p-2 -m-2 text-gray-500"
                 aria-label={`${isBookmarked ? 'Remove bookmark' : 'Bookmark'} post`}
                 aria-pressed={isBookmarked}
               >
-                <div className="group-hover:bg-yellow-50 rounded-full p-2 -m-2 transition-colors">
+                <motion.div 
+                  className="group-hover:bg-yellow-50 rounded-full p-2 -m-2 transition-colors"
+                  animate={isBookmarked ? { scale: [1, 1.2, 1] } : {}}
+                >
                   {isBookmarked ? (
                     <BookmarkSolidIcon className="w-5 h-5 text-yellow-500" aria-hidden="true" />
                   ) : (
                     <BookmarkIcon className="w-5 h-5 group-hover:text-yellow-500" aria-hidden="true" />
                   )}
-                </div>
-              </button>
+                </motion.div>
+              </motion.button>
             </div>
           </div>
         </div>
-      </article>
+      </motion.article>
 
       <PostDetailModal
         post={post}

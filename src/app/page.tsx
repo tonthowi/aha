@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CreatePostModal } from '@/components/CreatePostModal';
 import { TILPost } from '@/components/TILPost';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -138,7 +139,11 @@ export default function Home() {
       {/* Main Content */}
       <main className="max-w-2xl mx-auto space-y-4 p-4" role="main">
         <nav aria-label="Content filter">
-          <div className="bg-white rounded-2xl overflow-hidden">
+          <motion.div 
+            className="bg-white rounded-2xl overflow-hidden"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             <Tabs value={currentTab} className="w-full" onValueChange={setCurrentTab}>
               <TabsList className="w-full grid grid-cols-2">
                 <TabsTrigger value="people-learned">
@@ -149,12 +154,16 @@ export default function Home() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-          </div>
+          </motion.div>
         </nav>
 
-        <button
+        <motion.button
           onClick={() => setIsCreateModalOpen(true)}
           className="w-full bg-white hover:shadow-xl rounded-2xl p-4 flex items-center gap-4 border-1 border-gray-200 hover:border-gray-300 transition-shadow"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
           aria-label="Create new learning post"
         >
           <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0" aria-hidden="true">
@@ -163,24 +172,48 @@ export default function Home() {
             </svg>
           </div>
           <span className="text-gray-500 text-sm font-medium">Today I Learned...</span>
-        </button>
+        </motion.button>
 
         <section aria-label="Learning posts" className="space-y-4">
-          {filteredPosts.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No posts to display in this section.</p>
-          ) : (
-            filteredPosts.map((post) => (
-              <article key={post.id}>
-                <TILPost
-                  post={post}
-                  isLiked={likedPosts.has(post.id)}
-                  isBookmarked={bookmarkedPosts.has(post.id)}
-                  onLike={() => handleLike(post.id)}
-                  onBookmark={() => handleBookmark(post.id)}
-                />
-              </article>
-            ))
-          )}
+          <AnimatePresence mode="wait">
+            {filteredPosts.length === 0 ? (
+              <motion.p
+                key="empty"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="text-center text-gray-500 py-8"
+              >
+                No posts to display in this section.
+              </motion.p>
+            ) : (
+              <motion.div
+                key={currentTab}
+                initial={{ opacity: 0, x: currentTab === 'i-learned' ? 100 : -100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: currentTab === 'i-learned' ? -100 : 100 }}
+                transition={{ duration: 0.3 }}
+                className="grid gap-4"
+              >
+                {filteredPosts.map((post, index) => (
+                  <motion.div
+                    key={post.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <TILPost
+                      post={post}
+                      isLiked={likedPosts.has(post.id)}
+                      isBookmarked={bookmarkedPosts.has(post.id)}
+                      onLike={() => handleLike(post.id)}
+                      onBookmark={() => handleBookmark(post.id)}
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </section>
       </main>
 

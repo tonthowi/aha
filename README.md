@@ -1,6 +1,6 @@
-# Ansh & Riley Full-Stack Template
+# Aha! - Today I Learned
 
-This is a full-stack template project for Software Composers to create  applications with AI.
+A platform for capturing and sharing your daily learning moments and discoveries. Turn your "Aha!" moments into lasting knowledge.
 
 ## Getting started
 To create a new project, you go to `/paths`, choose from our list of Paths, and then use Cursor's Composer feature to quickly scaffold your project!

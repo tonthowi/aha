@@ -159,7 +159,7 @@ export default function Home() {
 
         <motion.button
           onClick={() => setIsCreateModalOpen(true)}
-          className="w-full bg-white hover:shadow-xl rounded-2xl p-4 flex items-center gap-4 border-1 border-gray-200 hover:border-gray-300 transition-shadow"
+          className="w-full bg-white hover:shadow-md rounded-2xl p-4 flex items-center gap-4 border-1 border-gray-200 hover:border-gray-300 transition-shadow"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           initial={{ opacity: 0, y: -20 }}

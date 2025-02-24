@@ -113,7 +113,10 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                   </div>
 
                   <h2 className="text-2xl font-bold mb-4">{post.title}</h2>
-                  <p className="text-gray-700 text-lg mb-6">{post.content}</p>
+                  <div 
+                    className="prose prose-lg max-w-none mb-6"
+                    dangerouslySetInnerHTML={{ __html: post.content }}
+                  />
 
                   {post.media && post.media.length > 0 && (
                     <div className="space-y-4 mb-6">

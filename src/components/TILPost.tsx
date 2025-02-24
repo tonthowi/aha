@@ -161,7 +161,10 @@ export const TILPost: React.FC<TILPostProps> = ({
             </div>
 
             <h2 className="font-bold mt-1">{post.title}</h2>
-            <p className="text-gray-800 mt-1 whitespace-pre-line line-clamp-4">{post.content}</p>
+            <div 
+              className="prose prose-sm mt-1 line-clamp-4 text-gray-800"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
 
             {renderMediaThumbnails()}
 

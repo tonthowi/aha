@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CreatePostModal } from '@/components/CreatePostModal';
 import { TILPost } from '@/components/TILPost';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AuthButton } from '@/components/AuthButton';
 
 interface MediaAttachment {
   type: 'image' | 'video' | 'audio' | 'file';
@@ -132,6 +133,7 @@ export default function Home() {
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex items-center justify-between h-14">
             <h1 className="text-xl font-bold">Aha! - Today I Learned</h1>
+            <AuthButton />
           </div>
         </div>
       </header>

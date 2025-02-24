@@ -1,11 +1,13 @@
 import Image from 'next/image';
 import { useState } from 'react';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 interface PostComposerProps {
   onPost: (content: string, attachments: File[]) => void;
 }
 
 export function PostComposer({ onPost }: PostComposerProps) {
+  const { user } = useAuth();
   const [content, setContent] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
 
@@ -21,13 +23,15 @@ export function PostComposer({ onPost }: PostComposerProps) {
     setAttachments([...attachments, ...files]);
   };
 
+  if (!user) return null;
+
   return (
     <div className="border-b p-4">
       <div className="flex gap-4">
         <div className="flex-shrink-0">
           <Image
-            src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest"
-            alt="Guest User"
+            src={user.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'}
+            alt={`${user.displayName || 'User'}'s avatar`}
             width={40}
             height={40}
             className="rounded-full"
@@ -35,7 +39,7 @@ export function PostComposer({ onPost }: PostComposerProps) {
         </div>
         <div className="flex-grow">
           <textarea
-            placeholder="What is happening?"
+            placeholder="What did you learn today?"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             className="w-full min-h-[100px] resize-none text-lg placeholder:text-gray-500 bg-transparent border-none focus:ring-0"

@@ -7,6 +7,11 @@ const nextConfig = {
         hostname: 'api.dicebear.com',
         pathname: '/7.x/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/a/**',
+      }
     ],
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',

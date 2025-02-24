@@ -127,8 +127,8 @@ export const TILPost: React.FC<TILPostProps> = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        whileHover={{ scale: 1.01 }}
-        className="p-6 cursor-pointer bg-white hover:bg-gray-50 transition-colors rounded-2xl"
+        whileHover={{ scale: 1.02 }}
+        className="p-6 cursor-pointer bg-white shadow-sm hover:shadow-md transition-colors rounded-2xl"
         onClick={() => setIsDetailOpen(true)}
         tabIndex={0}
         role="button"

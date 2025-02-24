@@ -123,62 +123,85 @@ export const TILPost: React.FC<TILPostProps> = ({
   return (
     <>
       <article
-        className="py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+        className="p-6 cursor-pointer bg-white hover:bg-gray-50 transition-colors rounded-2xl"
         onClick={() => setIsDetailOpen(true)}
+        tabIndex={0}
+        role="button"
+        aria-label={`View details of post: ${post.title}`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsDetailOpen(true);
+          }
+        }}
       >
-        <div className="flex gap-3">
+        <div className="flex gap-4">
           <div className="flex-shrink-0">
             <div className="relative h-10 w-10 rounded-full overflow-hidden">
               <Image
                 src={post.author.avatar}
-                alt={post.author.name}
+                alt={`${post.author.name}'s avatar`}
                 fill
                 className="object-cover"
               />
             </div>
           </div>
+          
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 text-sm flex-wrap">
-              <span className="font-bold truncate">{post.author.name}</span>
-              <span className="text-gray-500">·</span>
-              <time className="text-gray-500">{new Date(post.createdAt).toLocaleDateString()}</time>
-              <span className="text-gray-500">·</span>
-              {post.isPrivate ? (
-                <div className="flex items-center gap-1 text-yellow-600">
-                  <LockClosedIcon className="w-4 h-4" />
-                  <span className="text-sm">Private</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1 text-green-600">
-                  <GlobeAltIcon className="w-4 h-4" />
-                  <span className="text-sm">Public</span>
-                </div>
-              )}
-              <span className="text-gray-500">·</span>
-              <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+            <div className="flex items-center justify-between pb-4 border-b">
+              <div className="flex items-center gap-2 text-sm flex-wrap">
+                <span className="font-bold truncate">{post.author.name}</span>
+                <span className="text-gray-500" aria-hidden="true">·</span>
+                <time 
+                  className="text-gray-500"
+                  dateTime={post.createdAt}
+                >
+                  {new Date(post.createdAt).toLocaleDateString()}
+                </time>
+                <span className="text-gray-500" aria-hidden="true">·</span>
+                {post.isPrivate ? (
+                  <div className="flex items-center gap-1 text-yellow-600 ml-2" role="status">
+                    <LockClosedIcon className="w-4 h-4" aria-hidden="true" />
+                    <span className="text-sm">Private</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-green-600 ml-2" role="status">
+                    <GlobeAltIcon className="w-4 h-4" aria-hidden="true" />
+                    <span className="text-sm">Public</span>
+                  </div>
+                )}
+              </div>
+              <span 
+                className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10"
+                role="status"
+              >
                 {post.category}
               </span>
             </div>
 
-            <h2 className="font-bold mt-1">{post.title}</h2>
-            <div 
-              className="prose prose-sm mt-1 line-clamp-4 text-gray-800"
-              dangerouslySetInnerHTML={{ __html: post.content }}
-            />
+            <div className="mt-3">
+              <h2 className="font-bold">{post.title}</h2>
+              <div 
+                className="prose prose-sm mt-1 line-clamp-4 text-gray-800"
+                dangerouslySetInnerHTML={{ __html: post.content }}
+              />
 
-            {renderMediaThumbnails()}
+              {renderMediaThumbnails()}
+            </div>
 
             <div className="flex items-center justify-between mt-3" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center gap-10">
                 <button
                   onClick={onLike}
                   className="group flex items-center gap-2 text-gray-500"
+                  aria-label={`${isLiked ? 'Unlike' : 'Like'} post (${post.likes + (isLiked ? 1 : 0)} likes)`}
+                  aria-pressed={isLiked}
                 >
                   <div className="p-2 -m-2 group-hover:bg-red-50 rounded-full transition-colors">
                     {isLiked ? (
-                      <HeartSolidIcon className="w-5 h-5 text-red-500" />
+                      <HeartSolidIcon className="w-5 h-5 text-red-500" aria-hidden="true" />
                     ) : (
-                      <HeartIcon className="w-5 h-5 group-hover:text-red-500" />
+                      <HeartIcon className="w-5 h-5 group-hover:text-red-500" aria-hidden="true" />
                     )}
                   </div>
                   <span className={`text-sm ${isLiked ? 'text-red-500' : 'group-hover:text-red-500'}`}>
@@ -186,16 +209,22 @@ export const TILPost: React.FC<TILPostProps> = ({
                   </span>
                 </button>
 
-                <button className="group flex items-center gap-2 text-gray-500">
+                <button 
+                  className="group flex items-center gap-2 text-gray-500"
+                  aria-label={`${post.comments} comments`}
+                >
                   <div className="p-2 -m-2 group-hover:bg-blue-50 rounded-full transition-colors">
-                    <ChatBubbleLeftIcon className="w-5 h-5 group-hover:text-blue-500" />
+                    <ChatBubbleLeftIcon className="w-5 h-5 group-hover:text-blue-500" aria-hidden="true" />
                   </div>
                   <span className="text-sm group-hover:text-blue-500">{post.comments}</span>
                 </button>
 
-                <button className="group flex items-center gap-2 text-gray-500">
+                <button 
+                  className="group flex items-center gap-2 text-gray-500"
+                  aria-label="Share post"
+                >
                   <div className="p-2 -m-2 group-hover:bg-green-50 rounded-full transition-colors">
-                    <ArrowPathIcon className="w-5 h-5 group-hover:text-green-500" />
+                    <ArrowPathIcon className="w-5 h-5 group-hover:text-green-500" aria-hidden="true" />
                   </div>
                 </button>
               </div>
@@ -203,12 +232,14 @@ export const TILPost: React.FC<TILPostProps> = ({
               <button
                 onClick={onBookmark}
                 className="group p-2 -m-2 text-gray-500"
+                aria-label={`${isBookmarked ? 'Remove bookmark' : 'Bookmark'} post`}
+                aria-pressed={isBookmarked}
               >
                 <div className="group-hover:bg-yellow-50 rounded-full p-2 -m-2 transition-colors">
                   {isBookmarked ? (
-                    <BookmarkSolidIcon className="w-5 h-5 text-yellow-500" />
+                    <BookmarkSolidIcon className="w-5 h-5 text-yellow-500" aria-hidden="true" />
                   ) : (
-                    <BookmarkIcon className="w-5 h-5 group-hover:text-yellow-500" />
+                    <BookmarkIcon className="w-5 h-5 group-hover:text-yellow-500" aria-hidden="true" />
                   )}
                 </div>
               </button>

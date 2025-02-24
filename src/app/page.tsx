@@ -70,7 +70,7 @@ export default function Home() {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<string>>(new Set());
-  const [currentTab, setCurrentTab] = useState('for-you');
+  const [currentTab, setCurrentTab] = useState('people-learned');
 
   const handleCreatePost = (newPost: {
     title: string;
@@ -93,7 +93,16 @@ export default function Home() {
     };
 
     setPosts([post, ...posts]);
+    setCurrentTab('i-learned'); // Switch to "I Learned" tab after creating a post
   };
+
+  // Filter posts based on the current tab
+  const filteredPosts = posts.filter(post => {
+    if (currentTab === 'i-learned') {
+      return post.author.name === 'Current User';
+    }
+    return true; // Show all posts in "People Learned" tab
+  });
 
   const handleLike = (postId: string) => {
     const newLikedPosts = new Set(likedPosts);
@@ -116,45 +125,63 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-neutral-100">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b">
+      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b" role="banner">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex items-center justify-between h-14">
-            <h1 className="text-xl font-bold">Today I Learned</h1>
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-medium"
-            >
-              Share Learning
-            </button>
+            <h1 className="text-xl font-bold">Aha! - Today I Learned</h1>
           </div>
-          <Tabs value={currentTab} className="w-full" onValueChange={setCurrentTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="for-you" className="data-[state=active]:font-semibold">
-                For You
-              </TabsTrigger>
-              <TabsTrigger value="following" className="data-[state=active]:font-semibold">
-                Following
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-2xl mx-auto divide-y">
-        {posts.map((post) => (
-          <div key={post.id} className="px-4">
-            <TILPost
-              post={post}
-              isLiked={likedPosts.has(post.id)}
-              isBookmarked={bookmarkedPosts.has(post.id)}
-              onLike={() => handleLike(post.id)}
-              onBookmark={() => handleBookmark(post.id)}
-            />
+      <main className="max-w-2xl mx-auto space-y-4 p-4" role="main">
+        <nav aria-label="Content filter">
+          <div className="bg-white rounded-2xl overflow-hidden">
+            <Tabs value={currentTab} className="w-full" onValueChange={setCurrentTab}>
+              <TabsList className="w-full grid grid-cols-2">
+                <TabsTrigger value="people-learned">
+                  People Learned
+                </TabsTrigger>
+                <TabsTrigger value="i-learned">
+                  I Learned
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
-        ))}
+        </nav>
+
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="w-full bg-white hover:shadow-xl rounded-2xl p-4 flex items-center gap-4 border-1 border-gray-200 hover:border-gray-300 transition-shadow"
+          aria-label="Create new learning post"
+        >
+          <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+            <svg className="w-6 h-6 text-gray-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </div>
+          <span className="text-gray-500 text-sm font-medium">Today I Learned...</span>
+        </button>
+
+        <section aria-label="Learning posts" className="space-y-4">
+          {filteredPosts.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No posts to display in this section.</p>
+          ) : (
+            filteredPosts.map((post) => (
+              <article key={post.id}>
+                <TILPost
+                  post={post}
+                  isLiked={likedPosts.has(post.id)}
+                  isBookmarked={bookmarkedPosts.has(post.id)}
+                  onLike={() => handleLike(post.id)}
+                  onBookmark={() => handleBookmark(post.id)}
+                />
+              </article>
+            ))
+          )}
+        </section>
       </main>
 
       <CreatePostModal

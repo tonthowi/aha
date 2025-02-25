@@ -1,7 +1,13 @@
 import { useState, useRef, ChangeEvent } from 'react';
 import { PhotoIcon, VideoCameraIcon, MusicalNoteIcon, PaperClipIcon, LockClosedIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
-import { RichTextEditor } from './RichTextEditor';
+import dynamic from 'next/dynamic';
+
+// Dynamically import RichTextEditor with SSR disabled
+const RichTextEditor = dynamic(() => import('./RichTextEditor').then(mod => mod.RichTextEditor), {
+  ssr: false,
+  loading: () => <div className="border rounded-lg p-4 min-h-[200px] bg-gray-50">Loading editor...</div>
+});
 
 interface MediaAttachment {
   type: 'image' | 'video' | 'audio' | 'file';

@@ -173,6 +173,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       const html = editor.getHTML();
       onChange(html === '<p></p>' ? '' : html);
     },
+    immediatelyRender: false,
   });
 
   const handleFormat = useCallback((callback: () => boolean) => {

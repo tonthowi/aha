@@ -44,7 +44,7 @@ const initialPosts: Post[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John'
     },
     category: 'Programming',
-    createdAt: new Date().toISOString(),
+    createdAt: '2025-02-25T06:30:00.000Z',
     isPrivate: false,
     likes: 42,
     comments: 5,
@@ -59,7 +59,7 @@ const initialPosts: Post[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jane'
     },
     category: 'Web Development',
-    createdAt: new Date().toISOString(),
+    createdAt: '2025-02-24T14:15:00.000Z',
     isPrivate: false,
     likes: 38,
     comments: 7,
@@ -81,6 +81,9 @@ export default function Home() {
     isPrivate: boolean;
     media?: MediaAttachment[];
   }) => {
+    // Generate a stable timestamp that won't change between server and client
+    const timestamp = new Date().toISOString();
+    
     const post: Post = {
       id: Date.now().toString(),
       ...newPost,
@@ -88,7 +91,7 @@ export default function Home() {
         name: 'Current User',
         avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=current'
       },
-      createdAt: new Date().toISOString(),
+      createdAt: timestamp,
       likes: 0,
       comments: 0,
       bookmarks: 0

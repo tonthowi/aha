@@ -160,6 +160,7 @@ export const TILPost: React.FC<TILPostProps> = ({
                 <time 
                   className="text-gray-500"
                   dateTime={post.createdAt}
+                  suppressHydrationWarning
                 >
                   {new Date(post.createdAt).toLocaleDateString()}
                 </time>

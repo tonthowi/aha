@@ -49,117 +49,59 @@ export function AuthButton() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   
-  // Store sign-in attempt in session storage to show loading state after redirect
+  // Reset states when auth state changes
   useEffect(() => {
-    const checkSignInAttempt = () => {
-      try {
-        const signInAttempt = getSessionItem('signInAttempt');
-        const signInTimestamp = getSessionItem('signInTimestamp');
-        const usingSafeAuth = getSessionItem('usingSafeGoogleAuth');
-        
-        if (signInAttempt || usingSafeAuth) {
-          setIsSigningIn(true);
-          
-          // Store sign-in start time for showing elapsed time
-          if (signInTimestamp && !signInStartTime) {
-            setSignInStartTime(parseInt(signInTimestamp, 10));
-          }
-          
-          // Check if we have a user, an error, or if auth loading is complete
-          if (!authLoading) {
-            // If we have a user or there's an error in the URL, clear the sign-in attempt
-            if (user || (isBrowser && window.location.search.includes('error'))) {
-              removeSessionItem('signInAttempt');
-              removeSessionItem('signInTimestamp');
-              removeSessionItem('usingSafeGoogleAuth');
-              setIsSigningIn(false);
-              setSignInStartTime(null);
-              
-              // Check for error in URL
-              if (isBrowser) {
-                const urlParams = new URLSearchParams(window.location.search);
-                const errorCode = urlParams.get('error');
-                if (errorCode) {
-                  // Format the error message based on the error code
-                  let errorMessage = `Authentication error: ${errorCode}`;
-                  
-                  if (errorCode === 'redirect_loop_detected') {
-                    errorMessage = 'Too many redirects detected. Please try again or use a different browser.';
-                    console.error('Auth error from URL: redirect_loop_detected');
-                  } else if (errorCode.includes('popup_blocked')) {
-                    errorMessage = 'Pop-up was blocked by your browser. Please allow pop-ups for this site and try again.';
-                    console.error('Auth error from URL: popup_blocked');
-                  } else if (errorCode.includes('debug is not defined')) {
-                    errorMessage = 'There was an issue with the authentication process. Please try again.';
-                    console.error('Auth error from URL: debug is not defined');
-                  } else {
-                    console.error('Auth error from URL:', errorCode);
-                  }
-                  
-                  setError(errorMessage);
-                }
-              }
-            } else {
-              // If no user and no error, check if we've been waiting too long (2 minutes)
-              const now = Date.now();
-              const timestamp = signInTimestamp ? parseInt(signInTimestamp, 10) : now;
-              const timeElapsed = now - timestamp;
-              
-              if (timeElapsed > 120000) { // 2 minutes timeout
-                console.warn('Sign-in timeout reached, resetting state');
-                removeSessionItem('signInAttempt');
-                removeSessionItem('signInTimestamp');
-                removeSessionItem('usingSafeGoogleAuth');
-                setIsSigningIn(false);
-                setSignInStartTime(null);
-                setError('Sign-in timed out. Please try again.');
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Error checking sign-in attempt:', e);
+    if (user) {
+      setIsSigningIn(false);
+      setSignInStartTime(null);
+      setError(null);
+      clearAuthSessionStorage();
+    }
+  }, [user]);
+
+  // Check for sign-in attempt on mount and after redirects
+  useEffect(() => {
+    const checkSignInState = () => {
+      const signInAttempt = sessionStorage.getItem('signInAttempt');
+      const signInTimestamp = sessionStorage.getItem('signInTimestamp');
+      
+      if (signInAttempt === 'true' && signInTimestamp) {
+        setIsSigningIn(true);
+        setSignInStartTime(parseInt(signInTimestamp, 10));
+      } else {
         setIsSigningIn(false);
         setSignInStartTime(null);
-        removeSessionItem('signInAttempt');
-        removeSessionItem('signInTimestamp');
-        removeSessionItem('usingSafeGoogleAuth');
       }
     };
-    
-    // Check immediately and then set up an interval to check periodically
-    checkSignInAttempt();
-    const intervalId = setInterval(checkSignInAttempt, 2000); // Check every 2 seconds
-    
+
+    // Check immediately
+    checkSignInState();
+
+    // Set up interval to check periodically
+    const intervalId = setInterval(checkSignInState, 1000);
+
     return () => {
       clearInterval(intervalId);
-      // Clean up session storage if component unmounts during sign-in
-      if (isSigningIn) {
+    };
+  }, []);
+
+  // Handle timeout
+  useEffect(() => {
+    if (!isSigningIn || !signInStartTime) return;
+
+    const timeoutId = setTimeout(() => {
+      const elapsed = Date.now() - signInStartTime;
+      if (elapsed > 30000) { // 30 seconds timeout
+        console.warn('[Auth] Sign-in timeout reached');
+        setIsSigningIn(false);
+        setSignInStartTime(null);
+        setError('Sign-in timed out. Please try again.');
         clearAuthSessionStorage();
       }
-    };
-  }, [authLoading, user, isSigningIn, signInStartTime]);
+    }, 30000);
 
-  // Clear error parameters from URL on mount
-  useEffect(() => {
-    if (isBrowser && window.location.search.includes('error')) {
-      // Remove the error parameter but keep other parameters
-      try {
-        const url = new URL(window.location.href);
-        url.searchParams.delete('error');
-        window.history.replaceState({}, '', url.toString());
-      } catch (e) {
-        console.error('Error updating URL:', e);
-      }
-    }
-    
-    // Make sure debug is defined
-    if (isBrowser && !window.hasOwnProperty('debug')) {
-      (window as any).debug = function(...args: any[]) {
-        console.log('[Debug]', ...args);
-      };
-    }
-  }, []);
+    return () => clearTimeout(timeoutId);
+  }, [isSigningIn, signInStartTime]);
 
   // Reset signing out state when user changes
   useEffect(() => {
@@ -226,105 +168,41 @@ export function AuthButton() {
     }
   };
 
-  // Handle Google Sign In with improved browser compatibility
+  // Handle Google Sign In
   const handleGoogleSignIn = async () => {
     try {
-      // Clear any previous errors or sign-in attempts
       setError(null);
-      clearAuthSessionStorage();
-      
       setIsSigningIn(true);
-      // Store sign-in attempt in session storage to maintain state across redirects
-      setSessionItem('signInAttempt', 'true');
-      setSessionItem('signInTimestamp', Date.now().toString());
       setSignInStartTime(Date.now());
-      
-      // Make sure debug is defined before redirecting
-      if (isBrowser && !window.hasOwnProperty('debug')) {
-        (window as any).debug = function(...args: any[]) {
-          console.log('[Debug]', ...args);
-        };
-      }
       
       await signInWithGoogle();
     } catch (error: any) {
       console.error('Sign in failed:', error);
-      removeSessionItem('signInAttempt');
-      removeSessionItem('signInTimestamp');
-      removeSessionItem('usingSafeGoogleAuth');
       setIsSigningIn(false);
       setSignInStartTime(null);
-      
-      // Format user-friendly error messages
-      let errorMessage = error instanceof Error ? error.message : 'Authentication failed';
-      
-      // Handle specific Firebase auth errors
-      if (error.code) {
-        switch (error.code) {
-          case 'auth/popup-closed-by-user':
-            errorMessage = 'Sign-in was cancelled. The pop-up window was closed.';
-            break;
-          case 'auth/popup-blocked':
-            errorMessage = 'Pop-up was blocked by your browser. Please allow pop-ups for this site and try again.';
-            break;
-          case 'auth/cancelled-popup-request':
-            errorMessage = 'The authentication request was cancelled.';
-            break;
-          case 'auth/network-request-failed':
-            errorMessage = 'Network error. Please check your internet connection and try again.';
-            break;
-          case 'auth/too-many-requests':
-            errorMessage = 'Too many unsuccessful sign-in attempts. Please try again later.';
-            break;
-          default:
-            // Keep the original error message
-            break;
-        }
-      }
-      
-      setError(errorMessage);
+      setError(error.message);
+      clearAuthSessionStorage();
     }
   };
 
-  // Handle sign out with proper state management
+  // Handle sign out
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      setIsDropdownOpen(false); // Close dropdown immediately
+      setIsDropdownOpen(false);
       await signOut();
-      // The useEffect will reset isSigningOut when user becomes null
     } catch (error: any) {
       console.error('Sign out failed:', error);
       setIsSigningOut(false);
-      
-      // Format user-friendly error message
-      let errorMessage = error instanceof Error ? error.message : 'Sign out failed';
-      
-      if (error.code === 'auth/network-request-failed') {
-        errorMessage = 'Network error during sign out. You may still be signed in.';
-      }
-      
-      setError(errorMessage);
+      setError(error.message);
     }
   };
 
-  // Add a manual reset button when in signing in state
-  const handleCancelSignIn = () => {
-    clearAuthSessionStorage();
-    setIsSigningIn(false);
-    setSignInStartTime(null);
-    setError(null);
-  };
-
-  // Handle retry after error
+  // Handle retry
   const handleRetry = () => {
     setError(null);
-    // Clear all auth-related session storage before retrying
     clearAuthSessionStorage();
-    // Wait a moment before retrying
-    setTimeout(() => {
-      handleGoogleSignIn();
-    }, 500);
+    setTimeout(handleGoogleSignIn, 500);
   };
 
   // Calculate elapsed time for sign-in
@@ -337,7 +215,7 @@ export function AuthButton() {
     return `(${elapsed}s)`;
   };
 
-  // Show loading state during authentication
+  // Show loading state during initial auth check
   if (authLoading) {
     return (
       <div className="flex items-center justify-center h-8 w-8">
@@ -379,6 +257,7 @@ export function AuthButton() {
               src={user.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'}
               alt="Profile picture"
               fill
+              sizes="(max-width: 768px) 32px, 32px"
               className="object-cover"
             />
           </div>

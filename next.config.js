@@ -17,6 +17,19 @@ const nextConfig = {
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups'
+          }
+        ]
+      }
+    ];
+  }
 };
 
 module.exports = nextConfig; 

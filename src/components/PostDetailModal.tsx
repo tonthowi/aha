@@ -128,6 +128,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                 src={item.url}
                                 alt={item.filename}
                                 fill
+                                sizes="(max-width: 768px) 100vw, 800px"
                                 className="object-contain bg-black"
                               />
                             </div>

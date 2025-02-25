@@ -66,7 +66,7 @@ const safeUpdateUrl = (callback: (url: URL) => void): void => {
   }
 };
 
-// Function to clear all auth-related session storage
+// Function to clear all auth-related session storage and cookies
 export const clearAuthSessionStorage = () => {
   if (!isBrowser) return;
   
@@ -77,7 +77,8 @@ export const clearAuthSessionStorage = () => {
       'signInTimestamp',
       'authRedirectCount',
       'usingSafeGoogleAuth',
-      'lastRedirectTime'
+      'lastRedirectTime',
+      'authRedirectAttempt'
     ];
     
     authItems.forEach(item => safeSessionStorage.removeItem(item));
@@ -88,7 +89,12 @@ export const clearAuthSessionStorage = () => {
     // Find all Firebase auth related items
     for (let i = 0; i < safeSessionStorage.length(); i++) {
       const key = safeSessionStorage.key(i);
-      if (key && (key.startsWith('firebase:') || key.includes('firebaseui'))) {
+      if (key && (
+        key.startsWith('firebase:') || 
+        key.includes('firebaseui') || 
+        key.includes('auth') ||
+        key.includes('google')
+      )) {
         keysToRemove.push(key);
       }
     }
@@ -100,17 +106,23 @@ export const clearAuthSessionStorage = () => {
     
     console.log('[Auth] Cleared auth session storage');
     
-    // Also try to clear any problematic cookies
-    if (isBrowser && document.cookie) {
-      try {
-        document.cookie.split(';').forEach(function(c) {
-          if (c.trim().startsWith('firebaseAuth') || c.trim().startsWith('firebase')) {
-            document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
-          }
-        });
-      } catch (e) {
-        console.warn('[Auth] Error clearing cookies:', e);
-      }
+    // Clear auth-related cookies
+    if (document.cookie) {
+      const cookies = document.cookie.split(';');
+      const authCookies = cookies.filter(cookie => 
+        cookie.trim().startsWith('firebaseAuth') || 
+        cookie.trim().startsWith('firebase') ||
+        cookie.trim().includes('auth') ||
+        cookie.trim().includes('google')
+      );
+      
+      authCookies.forEach(cookie => {
+        const cookieName = cookie.split('=')[0].trim();
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      });
+      
+      console.log('[Auth] Cleared auth cookies');
     }
   } catch (e) {
     console.error('[Auth] Error in clearAuthSessionStorage:', e);
@@ -147,6 +159,7 @@ export const detectAuthRedirectLoop = (): boolean => {
     // If it's been more than 30 seconds since the last redirect, reset the counter
     if (timeSinceLastRedirect > 30000) {
       safeSessionStorage.setItem('authRedirectCount', '0');
+      return false;
     }
     
     // Update the last redirect time
@@ -155,15 +168,12 @@ export const detectAuthRedirectLoop = (): boolean => {
     // Get and increment the redirect count
     const redirectCountStr = safeSessionStorage.getItem('authRedirectCount');
     const redirectCount = redirectCountStr ? parseInt(redirectCountStr, 10) : 0;
-    safeSessionStorage.setItem('authRedirectCount', (redirectCount + 1).toString());
     
-    // If we've redirected more than 3 times in a row within 30 seconds, we might be in a loop
-    if (redirectCount >= 3) {
+    // If we've redirected more than 2 times in a row within 30 seconds, we might be in a loop
+    if (redirectCount >= 2) {
       console.error('[Auth] Possible redirect loop detected!');
-      // Reset the counter and add an error to the URL
-      safeSessionStorage.setItem('authRedirectCount', '0');
       
-      // Clear all auth-related session storage to break the loop
+      // Clear all auth-related storage to break the loop
       clearAuthSessionStorage();
       
       // Add error to URL
@@ -174,6 +184,8 @@ export const detectAuthRedirectLoop = (): boolean => {
       return true;
     }
     
+    // Increment the redirect count
+    safeSessionStorage.setItem('authRedirectCount', (redirectCount + 1).toString());
     return false;
   } catch (e) {
     console.error('[Auth] Error in detectAuthRedirectLoop:', e);
@@ -202,18 +214,100 @@ export const supportsPopups = (): boolean => {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (isMobile) return false;
     
-    // Check if we're in an iframe (popups often blocked in iframes)
+    // Check if we're in an iframe
     if (window.self !== window.top) return false;
     
-    // Check if popups are blocked
-    const popup = window.open('about:blank', '_blank', 'width=1,height=1');
-    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-      return false;
-    }
-    popup.close();
-    return true;
+    // Don't actually test popup creation as it can trigger COOP warnings
+    // Instead, rely on browser capabilities and settings
+    const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+    const isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
+    const isFirefox = /Firefox/.test(navigator.userAgent);
+    
+    // Modern browsers typically support popups
+    return isChrome || isSafari || isFirefox;
   } catch (e) {
     console.warn('[Auth] Error checking popup support:', e);
     return false;
   }
+};
+
+// Test helper functions with COOP-safe checks
+export const monitorAuthState = () => {
+  if (!isBrowser) return;
+
+  const getAuthState = () => ({
+    sessionStorage: {
+      signInAttempt: safeSessionStorage.getItem('signInAttempt'),
+      signInTimestamp: safeSessionStorage.getItem('signInTimestamp'),
+      authRedirectCount: safeSessionStorage.getItem('authRedirectCount'),
+      lastRedirectTime: safeSessionStorage.getItem('lastRedirectTime'),
+      authRedirectAttempt: safeSessionStorage.getItem('authRedirectAttempt'),
+      popupSupported: supportsPopups()
+    },
+    browser: {
+      userAgent: navigator.userAgent,
+      isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
+      isInIframe: window.self !== window.top
+    }
+  });
+
+  console.group('🔍 Auth State Monitor');
+  console.log('Initial State:', getAuthState());
+
+  // Monitor session storage changes
+  const originalSetItem = sessionStorage.setItem.bind(sessionStorage);
+  sessionStorage.setItem = (key: string, value: string) => {
+    originalSetItem(key, value);
+    if (key.includes('auth') || key.includes('sign')) {
+      console.log('📝 Session Storage Updated:', { [key]: value });
+      console.log('Current State:', getAuthState());
+    }
+  };
+
+  // Monitor session storage removals
+  const originalRemoveItem = sessionStorage.removeItem.bind(sessionStorage);
+  sessionStorage.removeItem = (key: string) => {
+    originalRemoveItem(key);
+    if (key.includes('auth') || key.includes('sign')) {
+      console.log('🗑️ Session Storage Removed:', key);
+      console.log('Current State:', getAuthState());
+    }
+  };
+
+  console.log('🎯 Auth State Monitor Active');
+  console.groupEnd();
+};
+
+// Test scenarios
+export const runAuthTests = async () => {
+  if (!isBrowser) return;
+
+  console.group('🧪 Running Auth Tests');
+
+  // Test 1: Check initial state
+  console.group('Test 1: Initial State');
+  console.log('Session Storage:', {
+    signInAttempt: safeSessionStorage.getItem('signInAttempt'),
+    signInTimestamp: safeSessionStorage.getItem('signInTimestamp'),
+    authRedirectCount: safeSessionStorage.getItem('authRedirectCount'),
+    lastRedirectTime: safeSessionStorage.getItem('lastRedirectTime')
+  });
+  console.groupEnd();
+
+  // Test 2: Check popup support
+  console.group('Test 2: Popup Support');
+  console.log('Popup Supported:', supportsPopups());
+  console.log('Is Mobile:', /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+  console.groupEnd();
+
+  // Test 3: Check redirect loop detection
+  console.group('Test 3: Redirect Loop Detection');
+  safeSessionStorage.setItem('authRedirectCount', '2');
+  safeSessionStorage.setItem('lastRedirectTime', Date.now().toString());
+  console.log('Redirect Loop Detected:', detectAuthRedirectLoop());
+  clearAuthSessionStorage();
+  console.groupEnd();
+
+  console.log('✅ Auth Tests Complete');
+  console.groupEnd();
 }; 

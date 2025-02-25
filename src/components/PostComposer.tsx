@@ -53,6 +53,7 @@ export function PostComposer({ onPost }: PostComposerProps) {
                       src={URL.createObjectURL(file)}
                       alt="Attachment"
                       fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover rounded-xl"
                     />
                   )}

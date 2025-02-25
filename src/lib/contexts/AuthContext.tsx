@@ -9,11 +9,15 @@ import {
   setPersistence,
   signOut as firebaseSignOut,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  AuthError
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/firebase';
 import { clearAuthSessionStorage, detectAuthRedirectLoop, logAuthState, resetRedirectCount } from '@/lib/utils/authUtils';
 import { signInWithGoogleSafely } from '@/lib/utils/googleAuthUtils';
+
+// Safe browser environment detection
+const isBrowser = typeof window !== 'undefined';
 
 // Custom logger to replace any potential debug calls
 const logger = {
@@ -23,8 +27,8 @@ const logger = {
   info: (...args: any[]) => console.info('[Auth]', ...args),
 };
 
-// Add to window for debugging
-if (typeof window !== 'undefined') {
+// Add to window for debugging only in browser environment
+if (isBrowser) {
   (window as any).debug = (...args: any[]) => console.log('[Debug]', ...args);
   (window as any).authLogger = logger;
 }
@@ -43,13 +47,25 @@ export const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
 });
 
+// Function to check if an error is a Firebase AuthError
+function isFirebaseAuthError(error: any): error is AuthError {
+  return error !== null && 
+         typeof error === 'object' && 
+         'code' in error && 
+         typeof error.code === 'string' &&
+         error.code.startsWith('auth/');
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCheckingRedirect, setIsCheckingRedirect] = useState(true);
+  const [authError, setAuthError] = useState<AuthError | null>(null);
 
-  // Set up persistence on mount
+  // Set up persistence on mount - only in browser
   useEffect(() => {
+    if (!isBrowser) return;
+
     const setupPersistence = async () => {
       try {
         // Use local persistence for better compatibility
@@ -63,8 +79,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setupPersistence();
   }, []);
 
-  // Handle redirect result on component mount
+  // Handle redirect result on component mount - only in browser
   useEffect(() => {
+    if (!isBrowser) {
+      setLoading(false);
+      setIsCheckingRedirect(false);
+      return;
+    }
+
     const checkRedirectResult = async () => {
       try {
         // Check if we're in a redirect loop
@@ -85,11 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           resetRedirectCount(); // Reset the redirect counter
           
           // Clear the safe auth flag
-          if (typeof window !== 'undefined') {
-            sessionStorage.removeItem('usingSafeGoogleAuth');
-            sessionStorage.removeItem('signInAttempt');
-            sessionStorage.removeItem('signInTimestamp');
-          }
+          clearAuthSessionStorage();
         } else {
           logger.log('No redirect result found');
           
@@ -100,20 +118,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(currentUser);
             
             // Clear any sign-in flags since we're already signed in
-            if (typeof window !== 'undefined') {
-              sessionStorage.removeItem('usingSafeGoogleAuth');
-              sessionStorage.removeItem('signInAttempt');
-              sessionStorage.removeItem('signInTimestamp');
-            }
+            clearAuthSessionStorage();
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         logger.error('Error processing redirect result:', error);
+        setAuthError(error);
+        
         // Add the error to the URL so the AuthButton can display it
         if (typeof window !== 'undefined') {
-          const url = new URL(window.location.href);
-          url.searchParams.set('error', error instanceof Error ? error.message : 'auth_error');
-          window.history.replaceState({}, '', url.toString());
+          try {
+            const url = new URL(window.location.href);
+            const errorMessage = error instanceof Error ? error.message : 'auth_error';
+            url.searchParams.set('error', errorMessage);
+            window.history.replaceState({}, '', url.toString());
+          } catch (urlError) {
+            logger.error('Error updating URL with auth error:', urlError);
+          }
           
           // Clear any sign-in attempt in session storage
           clearAuthSessionStorage();
@@ -127,28 +148,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkRedirectResult();
   }, []);
 
-  // Listen for auth state changes
+  // Listen for auth state changes - only in browser
   useEffect(() => {
-    // Only set up the listener if we're done checking redirect
-    if (!isCheckingRedirect) {
-      logger.log('Setting up auth state listener');
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setUser(user);
-        if (loading) setLoading(false);
-        
-        // If user is signed in, clear any sign-in flags
-        if (user && typeof window !== 'undefined') {
-          sessionStorage.removeItem('usingSafeGoogleAuth');
-          sessionStorage.removeItem('signInAttempt');
-          sessionStorage.removeItem('signInTimestamp');
-        }
-        
-        // Log the current auth state for debugging
-        logAuthState(user, loading);
-      });
-
-      return () => unsubscribe();
+    // Only set up the listener if we're in a browser and done checking redirect
+    if (!isBrowser || isCheckingRedirect) {
+      return;
     }
+
+    logger.log('Setting up auth state listener');
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (loading) setLoading(false);
+      
+      // If user is signed in, clear any sign-in flags
+      if (currentUser) {
+        clearAuthSessionStorage();
+      }
+      
+      // Log the current auth state for debugging
+      logAuthState(currentUser, loading);
+    }, (error) => {
+      logger.error('Auth state change error:', error);
+      setAuthError(error);
+    });
+
+    return () => unsubscribe();
   }, [loading, isCheckingRedirect]);
 
   // Try direct popup sign-in first, then fall back to safe method if needed
@@ -157,7 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logger.log('Starting Google sign-in');
       
       // Check if we're on mobile
-      const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isMobile = isBrowser && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
       if (isMobile) {
         // Use the safe method for mobile
@@ -176,20 +200,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(result.user);
           
           // Clear any sign-in flags
-          if (typeof window !== 'undefined') {
-            sessionStorage.removeItem('usingSafeGoogleAuth');
-            sessionStorage.removeItem('signInAttempt');
-            sessionStorage.removeItem('signInTimestamp');
-          }
-        } catch (popupError) {
+          clearAuthSessionStorage();
+        } catch (popupError: any) {
           logger.warn('Popup authentication failed, falling back to safe method', popupError);
-          // Fall back to the safe method
+          
+          // Check for specific popup errors
+          if (popupError.code === 'auth/popup-blocked') {
+            throw new Error('Pop-up was blocked by your browser. Please allow pop-ups for this site or try a different sign-in method.');
+          } else if (popupError.code === 'auth/popup-closed-by-user') {
+            throw new Error('The sign-in popup was closed. Please try again to complete the sign-in process.');
+          }
+          
+          // Fall back to the safe method for other errors
           await signInWithGoogleSafely();
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error signing in with Google:', error);
-      throw error;
+      
+      // Format user-friendly error message
+      let errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+      
+      // Handle specific auth errors
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/account-exists-with-different-credential':
+            errorMessage = 'An account already exists with the same email address but different sign-in method. Please sign in using the original method.';
+            break;
+          case 'auth/cancelled-popup-request':
+          case 'auth/popup-closed-by-user':
+            errorMessage = 'Sign-in was cancelled. Please try again.';
+            break;
+          case 'auth/popup-blocked':
+            errorMessage = 'Pop-up was blocked by your browser. Please allow pop-ups for this site or try a different sign-in method.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+            break;
+        }
+      }
+      
+      // Only set authError if it's a Firebase AuthError
+      if (isFirebaseAuthError(error)) {
+        setAuthError(error);
+      }
+      
+      clearAuthSessionStorage();
+      throw new Error(errorMessage);
     }
   };
 
@@ -204,7 +261,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logger.log('Sign out successful');
       
       // Force refresh the page after sign out to ensure clean state
-      if (typeof window !== 'undefined') {
+      if (isBrowser) {
         // Wait a moment before refreshing to allow state updates
         setTimeout(() => {
           window.location.href = '/';

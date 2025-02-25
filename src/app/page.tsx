@@ -6,6 +6,7 @@ import { CreatePostModal } from '@/components/CreatePostModal';
 import { TILPost } from '@/components/TILPost';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuthButton } from '@/components/AuthButton';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 interface MediaAttachment {
   type: 'image' | 'video' | 'audio' | 'file';
@@ -68,6 +69,7 @@ const initialPosts: Post[] = [
 ];
 
 export default function Home() {
+  const { user } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
@@ -88,8 +90,8 @@ export default function Home() {
       id: Date.now().toString(),
       ...newPost,
       author: {
-        name: 'Current User',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=current'
+        name: user?.displayName || 'Anonymous User',
+        avatar: user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=current'
       },
       createdAt: timestamp,
       likes: 0,
@@ -104,7 +106,10 @@ export default function Home() {
   // Filter posts based on the current tab
   const filteredPosts = posts.filter(post => {
     if (currentTab === 'i-learned') {
-      return post.author.name === 'Current User';
+      // Check if the post is from the current user
+      // For existing mock posts, we'll still use the name check
+      // For new posts created by the user, we can check if the post author name matches the user's display name
+      return user ? post.author.name === user.displayName || post.author.name === 'Anonymous User' : false;
     }
     return true; // Show all posts in "People Learned" tab
   });

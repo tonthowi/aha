@@ -5,12 +5,47 @@ import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { clearAuthSessionStorage } from '@/lib/utils/authUtils';
 
+// Safe access to browser APIs
+const isBrowser = typeof window !== 'undefined';
+
+// Helper for safely accessing sessionStorage
+const getSessionItem = (key: string): string | null => {
+  if (!isBrowser) return null;
+  try {
+    return sessionStorage.getItem(key);
+  } catch (e) {
+    console.error(`Error accessing sessionStorage for key ${key}:`, e);
+    return null;
+  }
+};
+
+// Helper for safely setting sessionStorage
+const setSessionItem = (key: string, value: string): void => {
+  if (!isBrowser) return;
+  try {
+    sessionStorage.setItem(key, value);
+  } catch (e) {
+    console.error(`Error setting sessionStorage for key ${key}:`, e);
+  }
+};
+
+// Helper for safely removing sessionStorage item
+const removeSessionItem = (key: string): void => {
+  if (!isBrowser) return;
+  try {
+    sessionStorage.removeItem(key);
+  } catch (e) {
+    console.error(`Error removing sessionStorage for key ${key}:`, e);
+  }
+};
+
 export function AuthButton() {
   const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [signInStartTime, setSignInStartTime] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   
@@ -18,40 +53,51 @@ export function AuthButton() {
   useEffect(() => {
     const checkSignInAttempt = () => {
       try {
-        const signInAttempt = sessionStorage.getItem('signInAttempt');
-        const signInTimestamp = sessionStorage.getItem('signInTimestamp');
-        const usingSafeAuth = sessionStorage.getItem('usingSafeGoogleAuth');
+        const signInAttempt = getSessionItem('signInAttempt');
+        const signInTimestamp = getSessionItem('signInTimestamp');
+        const usingSafeAuth = getSessionItem('usingSafeGoogleAuth');
         
         if (signInAttempt || usingSafeAuth) {
           setIsSigningIn(true);
           
+          // Store sign-in start time for showing elapsed time
+          if (signInTimestamp && !signInStartTime) {
+            setSignInStartTime(parseInt(signInTimestamp, 10));
+          }
+          
           // Check if we have a user, an error, or if auth loading is complete
           if (!authLoading) {
             // If we have a user or there's an error in the URL, clear the sign-in attempt
-            if (user || window.location.search.includes('error')) {
-              sessionStorage.removeItem('signInAttempt');
-              sessionStorage.removeItem('signInTimestamp');
-              sessionStorage.removeItem('usingSafeGoogleAuth');
+            if (user || (isBrowser && window.location.search.includes('error'))) {
+              removeSessionItem('signInAttempt');
+              removeSessionItem('signInTimestamp');
+              removeSessionItem('usingSafeGoogleAuth');
               setIsSigningIn(false);
+              setSignInStartTime(null);
               
               // Check for error in URL
-              const urlParams = new URLSearchParams(window.location.search);
-              const errorCode = urlParams.get('error');
-              if (errorCode) {
-                // Format the error message based on the error code
-                let errorMessage = `Authentication error: ${errorCode}`;
-                
-                if (errorCode === 'redirect_loop_detected') {
-                  errorMessage = 'Too many redirects detected. Please try again or use a different browser.';
-                  console.error('Auth error from URL: redirect_loop_detected');
-                } else if (errorCode.includes('debug is not defined')) {
-                  errorMessage = 'There was an issue with the authentication process. Please try again.';
-                  console.error('Auth error from URL: debug is not defined');
-                } else {
-                  console.error('Auth error from URL:', errorCode);
+              if (isBrowser) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const errorCode = urlParams.get('error');
+                if (errorCode) {
+                  // Format the error message based on the error code
+                  let errorMessage = `Authentication error: ${errorCode}`;
+                  
+                  if (errorCode === 'redirect_loop_detected') {
+                    errorMessage = 'Too many redirects detected. Please try again or use a different browser.';
+                    console.error('Auth error from URL: redirect_loop_detected');
+                  } else if (errorCode.includes('popup_blocked')) {
+                    errorMessage = 'Pop-up was blocked by your browser. Please allow pop-ups for this site and try again.';
+                    console.error('Auth error from URL: popup_blocked');
+                  } else if (errorCode.includes('debug is not defined')) {
+                    errorMessage = 'There was an issue with the authentication process. Please try again.';
+                    console.error('Auth error from URL: debug is not defined');
+                  } else {
+                    console.error('Auth error from URL:', errorCode);
+                  }
+                  
+                  setError(errorMessage);
                 }
-                
-                setError(errorMessage);
               }
             } else {
               // If no user and no error, check if we've been waiting too long (2 minutes)
@@ -59,12 +105,13 @@ export function AuthButton() {
               const timestamp = signInTimestamp ? parseInt(signInTimestamp, 10) : now;
               const timeElapsed = now - timestamp;
               
-              if (timeElapsed > 120000) { // 2 minutes timeout (increased from 30 seconds)
+              if (timeElapsed > 120000) { // 2 minutes timeout
                 console.warn('Sign-in timeout reached, resetting state');
-                sessionStorage.removeItem('signInAttempt');
-                sessionStorage.removeItem('signInTimestamp');
-                sessionStorage.removeItem('usingSafeGoogleAuth');
+                removeSessionItem('signInAttempt');
+                removeSessionItem('signInTimestamp');
+                removeSessionItem('usingSafeGoogleAuth');
                 setIsSigningIn(false);
+                setSignInStartTime(null);
                 setError('Sign-in timed out. Please try again.');
               }
             }
@@ -73,9 +120,10 @@ export function AuthButton() {
       } catch (e) {
         console.error('Error checking sign-in attempt:', e);
         setIsSigningIn(false);
-        sessionStorage.removeItem('signInAttempt');
-        sessionStorage.removeItem('signInTimestamp');
-        sessionStorage.removeItem('usingSafeGoogleAuth');
+        setSignInStartTime(null);
+        removeSessionItem('signInAttempt');
+        removeSessionItem('signInTimestamp');
+        removeSessionItem('usingSafeGoogleAuth');
       }
     };
     
@@ -85,20 +133,28 @@ export function AuthButton() {
     
     return () => {
       clearInterval(intervalId);
+      // Clean up session storage if component unmounts during sign-in
+      if (isSigningIn) {
+        clearAuthSessionStorage();
+      }
     };
-  }, [authLoading, user]);
+  }, [authLoading, user, isSigningIn, signInStartTime]);
 
   // Clear error parameters from URL on mount
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.search.includes('error')) {
+    if (isBrowser && window.location.search.includes('error')) {
       // Remove the error parameter but keep other parameters
-      const url = new URL(window.location.href);
-      url.searchParams.delete('error');
-      window.history.replaceState({}, '', url.toString());
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('error');
+        window.history.replaceState({}, '', url.toString());
+      } catch (e) {
+        console.error('Error updating URL:', e);
+      }
     }
     
     // Make sure debug is defined
-    if (typeof window !== 'undefined' && !window.hasOwnProperty('debug')) {
+    if (isBrowser && !window.hasOwnProperty('debug')) {
       (window as any).debug = function(...args: any[]) {
         console.log('[Debug]', ...args);
       };
@@ -125,10 +181,12 @@ export function AuthButton() {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    if (isBrowser) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
   }, []);
 
   // Handle keyboard navigation
@@ -136,6 +194,35 @@ export function AuthButton() {
     if (e.key === 'Escape') {
       setIsDropdownOpen(false);
       buttonRef.current?.focus();
+    } else if (e.key === 'ArrowDown' && isDropdownOpen) {
+      e.preventDefault();
+      // Focus the first item in the dropdown
+      const firstItem = dropdownRef.current?.querySelector('a, button') as HTMLElement;
+      firstItem?.focus();
+    }
+  };
+
+  // Handle keyboard navigation within dropdown menu
+  const handleMenuKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsDropdownOpen(false);
+      buttonRef.current?.focus();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const currentElement = document.activeElement;
+      const nextSibling = currentElement?.nextElementSibling as HTMLElement;
+      if (nextSibling) {
+        nextSibling.focus();
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const currentElement = document.activeElement;
+      const previousSibling = currentElement?.previousElementSibling as HTMLElement;
+      if (previousSibling) {
+        previousSibling.focus();
+      } else {
+        buttonRef.current?.focus();
+      }
     }
   };
 
@@ -148,24 +235,54 @@ export function AuthButton() {
       
       setIsSigningIn(true);
       // Store sign-in attempt in session storage to maintain state across redirects
-      sessionStorage.setItem('signInAttempt', 'true');
-      sessionStorage.setItem('signInTimestamp', Date.now().toString());
+      setSessionItem('signInAttempt', 'true');
+      setSessionItem('signInTimestamp', Date.now().toString());
+      setSignInStartTime(Date.now());
       
       // Make sure debug is defined before redirecting
-      if (typeof window !== 'undefined' && !window.hasOwnProperty('debug')) {
+      if (isBrowser && !window.hasOwnProperty('debug')) {
         (window as any).debug = function(...args: any[]) {
           console.log('[Debug]', ...args);
         };
       }
       
       await signInWithGoogle();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign in failed:', error);
-      sessionStorage.removeItem('signInAttempt');
-      sessionStorage.removeItem('signInTimestamp');
-      sessionStorage.removeItem('usingSafeGoogleAuth');
+      removeSessionItem('signInAttempt');
+      removeSessionItem('signInTimestamp');
+      removeSessionItem('usingSafeGoogleAuth');
       setIsSigningIn(false);
-      setError(error instanceof Error ? error.message : 'Authentication failed');
+      setSignInStartTime(null);
+      
+      // Format user-friendly error messages
+      let errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+      
+      // Handle specific Firebase auth errors
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/popup-closed-by-user':
+            errorMessage = 'Sign-in was cancelled. The pop-up window was closed.';
+            break;
+          case 'auth/popup-blocked':
+            errorMessage = 'Pop-up was blocked by your browser. Please allow pop-ups for this site and try again.';
+            break;
+          case 'auth/cancelled-popup-request':
+            errorMessage = 'The authentication request was cancelled.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Too many unsuccessful sign-in attempts. Please try again later.';
+            break;
+          default:
+            // Keep the original error message
+            break;
+        }
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -176,10 +293,18 @@ export function AuthButton() {
       setIsDropdownOpen(false); // Close dropdown immediately
       await signOut();
       // The useEffect will reset isSigningOut when user becomes null
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign out failed:', error);
       setIsSigningOut(false);
-      setError(error instanceof Error ? error.message : 'Sign out failed');
+      
+      // Format user-friendly error message
+      let errorMessage = error instanceof Error ? error.message : 'Sign out failed';
+      
+      if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error during sign out. You may still be signed in.';
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -187,6 +312,7 @@ export function AuthButton() {
   const handleCancelSignIn = () => {
     clearAuthSessionStorage();
     setIsSigningIn(false);
+    setSignInStartTime(null);
     setError(null);
   };
 
@@ -199,6 +325,16 @@ export function AuthButton() {
     setTimeout(() => {
       handleGoogleSignIn();
     }, 500);
+  };
+
+  // Calculate elapsed time for sign-in
+  const getElapsedTimeText = () => {
+    if (!signInStartTime) return '';
+    
+    const elapsed = Math.floor((Date.now() - signInStartTime) / 1000);
+    if (elapsed < 10) return '';
+    
+    return `(${elapsed}s)`;
   };
 
   // Show loading state during authentication
@@ -226,6 +362,7 @@ export function AuthButton() {
         className="relative"
         onMouseEnter={() => setIsDropdownOpen(true)}
         onMouseLeave={() => setIsDropdownOpen(false)}
+        onTouchStart={() => setIsDropdownOpen(prev => !prev)} // Toggle on touch for mobile
         onKeyDown={handleKeyDown}
       >
         <motion.button
@@ -257,18 +394,21 @@ export function AuthButton() {
             role="menu"
             aria-orientation="vertical"
             aria-labelledby="user-menu"
+            onKeyDown={handleMenuKeyDown}
           >
             <Link 
               href="/profile"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
               role="menuitem"
+              tabIndex={0}
             >
               Profile
             </Link>
             <button
               onClick={handleSignOut}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
               role="menuitem"
+              tabIndex={0}
             >
               Sign out
             </button>
@@ -284,14 +424,8 @@ export function AuthButton() {
         <div className="flex flex-col items-end">
           <div className="flex items-center gap-2 px-4 py-2 bg-white text-gray-800 rounded-lg shadow">
             <div className="w-5 h-5 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
-            <span>Signing in...</span>
+            <span>Signing in... {getElapsedTimeText()}</span>
           </div>
-          <button 
-            onClick={handleCancelSignIn}
-            className="mt-2 text-sm text-gray-600 hover:text-gray-800"
-          >
-            Cancel
-          </button>
         </div>
       ) : (
         <motion.button

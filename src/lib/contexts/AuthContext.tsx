@@ -104,134 +104,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isCheckingRedirect, setIsCheckingRedirect] = useState(true);
   const [authError, setAuthError] = useState<AuthError | null>(null);
 
-  // Check for existing user on mount
+  // Consolidated redirect result handler
   useEffect(() => {
     if (!isBrowser) return;
-    
-    const checkInitialAuthState = async () => {
+
+    const handleRedirectResult = async () => {
       try {
-        logger.debug('Checking initial auth state');
+        logger.debug('Checking redirect result');
         
-        // Wait for Firebase to initialize auth state
+        // Wait for Firebase to initialize
         await auth.authStateReady();
         
-        const currentUser = auth.currentUser;
-        logger.debug('Initial auth state check complete', {
-          hasUser: !!currentUser,
-          email: currentUser?.email || null,
-          timestamp: new Date().toISOString()
-        });
-        
-        if (currentUser) {
-          logger.info('User already authenticated on mount', {
-            email: currentUser.email,
-            uid: currentUser.uid,
-            provider: currentUser.providerData[0]?.providerId
-          });
-          setUser(currentUser);
-          
-          // Clear any stale sign-in attempts
-          clearAuthSessionStorage();
-          
-          // Clear loading state
-          setLoading(false);
-        } else {
-          // Check if we have a pending redirect
-          const hasSignInAttempt = sessionStorage.getItem('signInAttempt') === 'true';
-          if (hasSignInAttempt) {
-            // We have a sign-in attempt, check for redirect result immediately
-            logger.debug('Sign-in attempt found, checking redirect result immediately');
-            try {
-              const result = await getRedirectResult(auth);
-              if (result?.user) {
-                logger.info('User found in immediate redirect result check', {
-                  email: result.user.email,
-                  uid: result.user.uid
-                });
-                setUser(result.user);
-                clearAuthSessionStorage();
-                setLoading(false);
-              } else {
-                logger.debug('No user found in immediate redirect result check');
-                // Let the redirect handler manage loading state
-              }
-            } catch (redirectError) {
-              logger.error('Error in immediate redirect result check:', redirectError);
-              // Let the redirect handler manage loading state
-            }
-          } else {
-            // No user and no pending redirect, we're done loading
-            setLoading(false);
-          }
-        }
-      } catch (error) {
-        logger.error('Error checking initial auth state:', error);
-        setLoading(false);
-      }
-    };
-    
-    checkInitialAuthState();
-  }, []);
-
-  // Set up persistence on mount - only in browser
-  useEffect(() => {
-    if (!isBrowser) return;
-
-    const setupPersistence = async () => {
-      try {
-        logger.info('Setting up persistence...', { type: 'browserLocalPersistence' });
-        await setPersistence(auth, browserLocalPersistence);
-        logger.info('Persistence set up successfully');
-      } catch (error) {
-        logger.error("Error setting persistence:", error);
-      }
-    };
-    
-    setupPersistence();
-  }, []);
-
-  // Handle redirect result on component mount - only in browser
-  useEffect(() => {
-    if (!isBrowser) {
-      logger.debug('Skipping redirect check - not in browser');
-      setLoading(false);
-      setIsCheckingRedirect(false);
-      return;
-    }
-
-    logger.debug('Initializing redirect check effect', {
-      hasAuthObject: !!auth,
-      currentUser: auth.currentUser?.email || null,
-      isLoading: loading,
-      isCheckingRedirect,
-      timestamp: new Date().toISOString()
-    });
-
-    const checkRedirectResult = async () => {
-      try {
-        // Log initial state
-        logger.debug('Starting redirect result check with state', {
-          authCurrentUser: auth.currentUser?.email || null,
-          authInitialized: auth.currentUser !== undefined,
-          loading,
-          isCheckingRedirect,
-          timestamp: new Date().toISOString()
-        });
-
         // Check if we have a pending sign-in attempt
         const hasSignInAttempt = sessionStorage.getItem('signInAttempt') === 'true';
         const signInTimestamp = sessionStorage.getItem('signInTimestamp');
         
-        logger.info('Starting redirect result check', {
+        logger.info('Processing redirect result', {
           hasSignInAttempt,
           signInTimestamp,
           currentUser: auth.currentUser?.email || null,
           currentTime: new Date().toISOString()
         });
-        
-        // If we don't have a sign-in attempt, skip the check
+
+        // If we don't have a sign-in attempt, we're not in a redirect flow
         if (!hasSignInAttempt) {
-          logger.debug('No sign-in attempt found, skipping redirect check');
+          logger.debug('No sign-in attempt found');
           setLoading(false);
           setIsCheckingRedirect(false);
           return;
@@ -239,176 +136,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Check if we're in a redirect loop
         if (detectAuthRedirectLoop()) {
-          logger.warn('Redirect loop detected, aborting auth check');
+          logger.warn('Redirect loop detected, aborting');
+          clearAuthSessionStorage();
           setLoading(false);
           setIsCheckingRedirect(false);
-          clearAuthSessionStorage();
           return;
         }
 
-        // Wait for Firebase to initialize fully
-        logger.debug('Waiting for Firebase to initialize fully');
-        await auth.authStateReady();
-        
-        // Check if we already have a user after the redirect
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          logger.info('User already signed in after redirect', {
-            email: currentUser.email,
-            uid: currentUser.uid,
-            provider: currentUser.providerData[0]?.providerId
-          });
-          setUser(currentUser);
-          clearAuthSessionStorage();
-          setLoading(false);
-          setIsCheckingRedirect(false);
-          return;
-        }
-        
         // Get the redirect result
-        logger.debug('Getting redirect result from Firebase');
+        const result = await getRedirectResult(auth);
         
-        try {
-          // Set up a timeout for getRedirectResult
-          const redirectResultPromise = Promise.race([
-            getRedirectResult(auth),
-            new Promise<never>((_, reject) => {
-              setTimeout(() => {
-                reject(new Error('getRedirectResult timed out after 10s'));
-              }, 10000); // 10 second timeout
-            })
-          ]);
-
-          logger.debug('Awaiting redirect result from Firebase', {
-            timestamp: new Date().toISOString()
+        if (result?.user) {
+          logger.info('User authenticated via redirect', {
+            email: result.user.email,
+            uid: result.user.uid,
+            provider: result.user.providerData[0]?.providerId
           });
           
-          const result = await redirectResultPromise;
-          
-          logger.debug('Got redirect result', { 
-            hasResult: !!result,
-            resultUser: result?.user?.email || null,
-            timestamp: new Date().toISOString()
-          });
-          
-          if (result?.user) {
-            logger.info('User signed in after redirect', {
-              email: result.user.email,
-              uid: result.user.uid,
-              provider: result.user.providerData[0]?.providerId
-            });
-            
-            // Update the user state
-            setUser(result.user);
-            resetRedirectCount();
-            clearAuthSessionStorage();
-            
-            // Force a page refresh to ensure clean state
-            if (isBrowser) {
-              logger.info('Refreshing page to ensure clean state');
-              window.location.reload();
-              return;
-            }
-          } else {
-            logger.warn('No user found in redirect result');
-            
-            // Try one more time with a delay
-            setTimeout(async () => {
-              try {
-                logger.debug('Retrying redirect result check');
-                const retryResult = await getRedirectResult(auth);
-                
-                if (retryResult?.user) {
-                  logger.info('User found in retry redirect result', {
-                    email: retryResult.user.email,
-                    uid: retryResult.user.uid
-                  });
-                  setUser(retryResult.user);
-                  clearAuthSessionStorage();
-                } else {
-                  logger.warn('No user found in retry redirect result');
-                  clearAuthSessionStorage();
-                }
-              } catch (retryError) {
-                logger.error('Error in retry redirect result:', retryError);
-                clearAuthSessionStorage();
-              } finally {
-                setLoading(false);
-                setIsCheckingRedirect(false);
-              }
-            }, 2000);
-            return;
-          }
-        } catch (redirectError: any) {
-          logger.error('Error getting redirect result:', redirectError, {
-            code: redirectError?.code || 'unknown',
-            message: redirectError?.message,
-            isTimeout: redirectError.message?.includes('timed out'),
-            timestamp: new Date().toISOString()
-          });
-          
-          // Check if we have a current user despite the error
-          const currentUser = auth.currentUser;
-          if (currentUser) {
-            logger.info('User found in current state despite redirect error', {
-              email: currentUser.email,
-              uid: currentUser.uid
-            });
-            setUser(currentUser);
-            clearAuthSessionStorage();
-          } else {
-            clearAuthSessionStorage();
-          }
+          setUser(result.user);
+          resetRedirectCount();
+          clearAuthSessionStorage();
+          setLoading(false);
+          setIsCheckingRedirect(false);
+        } else {
+          logger.warn('No user found in redirect result');
+          clearAuthSessionStorage();
+          setLoading(false);
+          setIsCheckingRedirect(false);
         }
       } catch (error: any) {
-        logger.error('Error processing redirect result:', error, {
-          code: error?.code || 'unknown',
-          name: error?.name || 'Error',
-          message: error?.message,
-          stack: error?.stack || 'No stack trace',
-          timestamp: new Date().toISOString()
-        });
-        
-        // Handle specific error cases
-        if (error.code === 'auth/invalid-credential') {
-          logger.warn('Invalid credential error, clearing auth state');
-          await auth.signOut().catch(e => logger.error('Error signing out:', e));
-          clearAuthSessionStorage();
-        }
-        
-        setAuthError(isFirebaseAuthError(error) ? error : null);
-      } finally {
+        logger.error('Error processing redirect result:', error);
+        clearAuthSessionStorage();
         setLoading(false);
         setIsCheckingRedirect(false);
-        logger.info('Finished checking redirect result');
-      }
-    };
-
-    // Run the check immediately
-    checkRedirectResult();
-
-    // Also set up an interval to check for timeout
-    const timeoutCheck = setInterval(() => {
-      const signInTimestamp = sessionStorage.getItem('signInTimestamp');
-      if (signInTimestamp) {
-        const elapsed = Date.now() - parseInt(signInTimestamp, 10);
-        if (elapsed > 15000) { // 15 seconds timeout
-          logger.warn('Sign-in timeout reached, clearing state');
-          clearAuthSessionStorage();
-          setLoading(false);
-          setIsCheckingRedirect(false);
-          clearInterval(timeoutCheck);
+        
+        if (error.code === 'auth/invalid-credential') {
+          await auth.signOut().catch(e => logger.error('Error signing out:', e));
         }
       }
-    }, 1000); // Check every second
-
-    return () => {
-      clearInterval(timeoutCheck);
-      logger.debug('Cleaning up redirect check effect', {
-        timestamp: new Date().toISOString()
-      });
     };
-  }, []);
+
+    handleRedirectResult();
+  }, []); // Run once on mount
 
   // Listen for auth state changes - only in browser
   useEffect(() => {
@@ -491,95 +260,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [loading, isCheckingRedirect]);
 
-  // Try the simplest possible Google sign-in implementation
+  // Improved Google sign-in implementation with better popup handling
   const signInWithGoogle = async () => {
     try {
       logger.info('Starting Google sign-in');
       
-      // Clear any previous auth state and errors
+      // Clear any previous state
       clearAuthSessionStorage();
       setAuthError(null);
       setLoading(true);
       
-      // Create a new Google provider with minimum configuration
       const provider = new GoogleAuthProvider();
-      
-      // Force account selection to avoid silent sign-in issues
       provider.setCustomParameters({ 
         prompt: 'select_account',
-        // Additional parameters for better compatibility
         include_granted_scopes: 'true',
         access_type: 'offline'
       });
       
-      // Sign out first to ensure a clean state
+      // Ensure a clean state before starting
       await auth.signOut();
 
-      // Use popup for localhost, redirect for production
+      // Check if we're on localhost
       const isLocalhost = window.location.hostname === 'localhost' || 
                          window.location.hostname === '127.0.0.1';
       
       if (isLocalhost) {
-        // Use popup for local development
-        logger.info('Using popup sign-in for localhost');
         try {
+          logger.info('Attempting popup sign-in');
           const result = await signInWithPopup(auth, provider);
-          if (result.user) {
+          
+          if (result?.user) {
             logger.info('User signed in successfully with popup', {
               email: result.user.email,
-              uid: result.user.uid,
-              provider: result.user.providerData[0]?.providerId
+              uid: result.user.uid
             });
-            
             setUser(result.user);
-            clearAuthSessionStorage();
             setLoading(false);
-            
-            // Force a clean state
-            window.location.reload();
+            return; // Exit early on successful popup sign-in
           }
         } catch (popupError: any) {
-          logger.warn('Popup authentication error:', popupError);
+          logger.warn('Popup sign-in error:', popupError);
           
-          // Only fall back to redirect if popup was blocked, not if it was closed
+          // Only fall back to redirect if popup is blocked by browser
           if (popupError.code === 'auth/popup-blocked') {
-            logger.info('Popup was blocked, falling back to redirect');
-            
-            // Store sign-in attempt in session storage
-            sessionStorage.setItem('signInAttempt', 'true');
-            sessionStorage.setItem('signInTimestamp', Date.now().toString());
-            
-            // Fall back to redirect
-            await signInWithRedirect(auth, provider);
-          } else if (popupError.code === 'auth/popup-closed-by-user' || 
-                    popupError.code === 'auth/cancelled-popup-request') {
-            // User closed the popup - just clear loading state
-            logger.info('User closed the sign-in popup');
+            logger.info('Popup was blocked by browser, falling back to redirect');
+            // Continue to redirect flow
+          } else {
+            // For popup closed or cancelled, just clear loading state and return
+            logger.info('Popup was closed or cancelled by user');
             setLoading(false);
             return;
-          } else {
-            // For other errors, throw them
-            throw popupError;
           }
         }
-      } else {
-        // Use redirect for production environment
-        logger.info('Using redirect sign-in for production');
-        
-        // Store sign-in attempt in session storage
-        sessionStorage.setItem('signInAttempt', 'true');
-        sessionStorage.setItem('signInTimestamp', Date.now().toString());
-        
-        // Initiate redirect sign-in
-        await signInWithRedirect(auth, provider);
       }
+      
+      // If we reach here, either:
+      // 1. We're not on localhost
+      // 2. Popup was blocked and we're falling back
+      logger.info('Using redirect sign-in');
+      sessionStorage.setItem('signInAttempt', 'true');
+      sessionStorage.setItem('signInTimestamp', Date.now().toString());
+      await signInWithRedirect(auth, provider);
+      
     } catch (error: any) {
       logger.error('Error in Google sign-in:', error);
-      
-      // Clear auth state
       clearAuthSessionStorage();
       setLoading(false);
-      
       throw error;
     }
   };

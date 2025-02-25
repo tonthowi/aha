@@ -69,7 +69,7 @@ const initialPosts: Post[] = [
 ];
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, signInWithGoogle } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
@@ -168,20 +168,26 @@ export default function Home() {
         </nav>
 
         <motion.button
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={() => user ? setIsCreateModalOpen(true) : signInWithGoogle()}
           className="w-full bg-white hover:shadow-md rounded-2xl p-4 flex items-center gap-4 border-1 border-gray-200 hover:border-gray-300 transition-shadow"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          aria-label="Create new learning post"
+          aria-label={user ? "Create new learning post" : "Sign in to create post"}
         >
-          <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-            <svg className="w-6 h-6 text-gray-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </div>
-          <span className="text-gray-500 text-sm font-medium">Today I Learned...</span>
+          {user ? (
+            <>
+              <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <svg className="w-6 h-6 text-gray-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <span className="text-gray-500 text-sm font-medium">Today I Learned...</span>
+            </>
+          ) : (
+            <span className="text-gray-500 text-sm font-medium w-full text-center">Sign in to post your daily TILs</span>
+          )}
         </motion.button>
 
         <section aria-label="Learning posts" className="space-y-4">

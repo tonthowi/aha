@@ -494,7 +494,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Try the simplest possible Google sign-in implementation
   const signInWithGoogle = async () => {
     try {
-      logger.info('Starting simple Google sign-in');
+      logger.info('Starting Google sign-in');
       
       // Clear any previous auth state and errors
       clearAuthSessionStorage();
@@ -505,38 +505,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const provider = new GoogleAuthProvider();
       
       // Force account selection to avoid silent sign-in issues
-      provider.setCustomParameters({ prompt: 'select_account' });
+      provider.setCustomParameters({ 
+        prompt: 'select_account',
+        // Additional parameters for better compatibility
+        include_granted_scopes: 'true',
+        access_type: 'offline'
+      });
       
       // Sign out first to ensure a clean state
       await auth.signOut();
+
+      // Use popup for localhost, redirect for production
+      const isLocalhost = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1';
       
-      // Use simple popup sign-in - most direct approach
-      logger.info('Using popup sign-in (direct approach)');
-      const result = await signInWithPopup(auth, provider);
-      
-      if (result.user) {
-        logger.info('User signed in successfully with popup', {
-          email: result.user.email,
-          uid: result.user.uid,
-          provider: result.user.providerData[0]?.providerId
-        });
+      if (isLocalhost) {
+        // Use popup for local development
+        logger.info('Using popup sign-in for localhost');
+        try {
+          const result = await signInWithPopup(auth, provider);
+          if (result.user) {
+            logger.info('User signed in successfully with popup', {
+              email: result.user.email,
+              uid: result.user.uid,
+              provider: result.user.providerData[0]?.providerId
+            });
+            
+            setUser(result.user);
+            clearAuthSessionStorage();
+            setLoading(false);
+            
+            // Force a clean state
+            window.location.reload();
+          }
+        } catch (popupError: any) {
+          logger.warn('Popup authentication error:', popupError);
+          
+          // Only fall back to redirect if popup was blocked, not if it was closed
+          if (popupError.code === 'auth/popup-blocked') {
+            logger.info('Popup was blocked, falling back to redirect');
+            
+            // Store sign-in attempt in session storage
+            sessionStorage.setItem('signInAttempt', 'true');
+            sessionStorage.setItem('signInTimestamp', Date.now().toString());
+            
+            // Fall back to redirect
+            await signInWithRedirect(auth, provider);
+          } else if (popupError.code === 'auth/popup-closed-by-user' || 
+                    popupError.code === 'auth/cancelled-popup-request') {
+            // User closed the popup - just clear loading state
+            logger.info('User closed the sign-in popup');
+            setLoading(false);
+            return;
+          } else {
+            // For other errors, throw them
+            throw popupError;
+          }
+        }
+      } else {
+        // Use redirect for production environment
+        logger.info('Using redirect sign-in for production');
         
-        setUser(result.user);
-        clearAuthSessionStorage();
-        setLoading(false);
+        // Store sign-in attempt in session storage
+        sessionStorage.setItem('signInAttempt', 'true');
+        sessionStorage.setItem('signInTimestamp', Date.now().toString());
         
-        // Force a clean state
-        window.location.reload();
+        // Initiate redirect sign-in
+        await signInWithRedirect(auth, provider);
       }
     } catch (error: any) {
-      logger.error('Error in simple Google sign-in:', error);
-      
-      // Check for specific error
-      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        logger.warn('Sign-in popup was closed by user');
-      } else if (error.code === 'auth/popup-blocked') {
-        logger.warn('Sign-in popup was blocked by browser');
-      }
+      logger.error('Error in Google sign-in:', error);
       
       // Clear auth state
       clearAuthSessionStorage();

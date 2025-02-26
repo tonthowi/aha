@@ -77,9 +77,6 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-          Title
-        </label>
         <input
           type="text"
           id="title"
@@ -92,9 +89,6 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
       </div>
 
       <div>
-        <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-          Category
-        </label>
         <select
           id="category"
           value={category}
@@ -112,9 +106,6 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
       </div>
 
       <div>
-        <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-          Content
-        </label>
         <RichTextEditor
           content={content}
           onChange={setContent}

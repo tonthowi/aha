@@ -1,5 +1,6 @@
-import { Dialog, Transition } from '@headlessui/react';
+import { Dialog } from '@headlessui/react';
 import { Fragment } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CreateTILPost } from './CreateTILPost';
 
 interface MediaAttachment {
@@ -27,49 +28,38 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   onSubmit,
 }) => {
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-10" onClose={onClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black/25" />
-        </Transition.Child>
-
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all">
-                <Dialog.Title
-                  as="h3"
-                  className="text-lg font-medium leading-6 text-gray-900 mb-4"
-                >
-                  Create a New TIL Post
-                </Dialog.Title>
-                <CreateTILPost
-                  onSubmit={(post) => {
-                    onSubmit(post);
-                    onClose();
-                  }}
-                />
-              </Dialog.Panel>
-            </Transition.Child>
+    <AnimatePresence>
+      {isOpen && (
+        <Dialog as="div" className="relative z-10" onClose={onClose} open={isOpen}>
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-start justify-center px-4">
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
+                className="w-full"
+                style={{ maxWidth: "640px" }} // Match post card width
+              >
+                <Dialog.Panel className="w-full transform overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all mt-28">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900 mb-4"
+                  >
+                    What did you learn today?
+                  </Dialog.Title>
+                  <CreateTILPost
+                    onSubmit={(post) => {
+                      onSubmit(post);
+                      onClose();
+                    }}
+                  />
+                </Dialog.Panel>
+              </motion.div>
+            </div>
           </div>
-        </div>
-      </Dialog>
-    </Transition>
+        </Dialog>
+      )}
+    </AnimatePresence>
   );
 }; 

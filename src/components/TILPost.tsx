@@ -48,6 +48,13 @@ export const TILPost: React.FC<TILPostProps> = ({
 }) => {
   const router = useRouter();
 
+  // Parse categories string into array and format display
+  const formatCategories = (categoryString: string) => {
+    const categories = categoryString.split(', ');
+    if (categories.length <= 1) return categories[0];
+    return `${categories[0]} ${categories.length - 1}+`;
+  };
+
   const renderMediaThumbnails = () => {
     if (!post.media || post.media.length === 0) return null;
 
@@ -181,10 +188,10 @@ export const TILPost: React.FC<TILPostProps> = ({
               )}
             </div>
             <span 
-              className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10"
+              className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700"
               role="status"
             >
-              {post.category}
+              {formatCategories(post.category)}
             </span>
           </div>
 

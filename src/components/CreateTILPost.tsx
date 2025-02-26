@@ -24,26 +24,56 @@ interface CreateTILPostProps {
 export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [category, setCategory] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
   const [media, setMedia] = useState<MediaAttachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const categoriesContainerRef = useRef<HTMLDivElement>(null);
 
   const categories = [
-    'Programming',
-    'Web Development',
-    'Data Science',
-    'DevOps',
-    'Design',
-    'Other',
+    '💻 Programming',
+    '🌐 Web Development',
+    '📊 Data Science',
+    '🚀 DevOps',
+    '🎨 Design',
+    '📱 Mobile Development',
+    '🤖 Machine Learning',
+    '☁️ Cloud Computing',
+    '🔒 Security',
+    '🗄️ Databases',
+    '🎯 UI/UX',
+    '🧪 Testing',
+    '🏗️ Architecture',
+    '✨ Best Practices',
+    '🛠️ Tools',
+    '🔮 Other'
   ];
+
+  const toggleCategory = (category: string) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(category)) {
+        return prev.filter(c => c !== category);
+      }
+      if (prev.length >= 5) {
+        return prev;
+      }
+      return [...prev, category];
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ title, content, category, isPrivate, media });
+    onSubmit({ 
+      title, 
+      content, 
+      category: selectedCategories.join(', '), // Join multiple categories
+      isPrivate, 
+      media 
+    });
     setTitle('');
     setContent('');
-    setCategory('');
+    setSelectedCategories([]);
     setIsPrivate(false);
     setMedia([]);
   };
@@ -88,21 +118,35 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
         />
       </div>
 
-      <div>
-        <select
-          id="category"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          required
-        >
-          <option value="">Select a category</option>
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
+      <div ref={categoriesContainerRef} className="space-y-2">
+        <div className="flex flex-wrap gap-2">
+          {categories.slice(0, showAllCategories ? undefined : 12).map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => toggleCategory(category)}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                selectedCategories.includes(category)
+                  ? 'bg-gray-900 text-white hover:bg-gray-800'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {category}
+            </button>
           ))}
-        </select>
+          {!showAllCategories && categories.length > 12 && (
+            <button
+              type="button"
+              onClick={() => setShowAllCategories(true)}
+              className="px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+              +{categories.length - 12}
+            </button>
+          )}
+        </div>
+        {selectedCategories.length >= 5 && (
+          <p className="text-sm text-yellow-600">Maximum 5 categories allowed</p>
+        )}
       </div>
 
       <div>

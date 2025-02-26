@@ -50,6 +50,13 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   onLike,
   onBookmark,
 }) => {
+  // Format categories string into display format
+  const formatCategories = (categoryString: string) => {
+    const categories = categoryString.split(', ');
+    if (categories.length <= 1) return categories[0];
+    return `${categories[0]} ${categories.length - 1}+`;
+  };
+
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -99,9 +106,20 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                       </div>
                       <div>
                         <h3 className="font-medium text-lg">{post.author.name}</h3>
-                        <p className="text-sm text-gray-500">
-                          {new Date(post.createdAt).toLocaleDateString()} · {post.category}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <time 
+                            className="text-sm text-gray-500"
+                            dateTime={post.createdAt}
+                          >
+                            {new Date(post.createdAt).toLocaleDateString()}
+                          </time>
+                          <span className="text-sm text-gray-500">·</span>
+                          <span 
+                            className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                          >
+                            {formatCategories(post.category)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     {post.isPrivate && (

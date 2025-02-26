@@ -2,6 +2,7 @@ import { useState, useRef, ChangeEvent } from 'react';
 import { PhotoIcon, VideoCameraIcon, MusicalNoteIcon, PaperClipIcon, LockClosedIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import { Post } from '@/lib/contexts/PostsContext';
 
 // Dynamically import RichTextEditor with SSR disabled
 const RichTextEditor = dynamic(() => import('./RichTextEditor').then(mod => mod.RichTextEditor), {
@@ -17,13 +18,7 @@ interface MediaAttachment {
 }
 
 interface CreateTILPostProps {
-  onSubmit: (post: {
-    title: string;
-    content: string;
-    category: string;
-    isPrivate: boolean;
-    media?: MediaAttachment[];
-  }) => void;
+  onSubmit: (post: Omit<Post, 'id' | 'author' | 'createdAt' | 'likes' | 'comments' | 'bookmarks'>) => void;
 }
 
 export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {

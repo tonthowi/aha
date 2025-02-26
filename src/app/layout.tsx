@@ -2,14 +2,15 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/contexts/AuthContext';
+import { PostsProvider } from '@/lib/contexts/PostsContext';
 // Import debug utilities to ensure they're available globally
 import '@/lib/utils/debugUtils';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Aha! - Today I Learned',
-  description: 'Share and discover daily learnings',
+  title: 'Today I Learned',
+  description: 'Share your daily learnings with the world',
 };
 
 // Add a script to define debug function in the global scope
@@ -72,9 +73,11 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <AuthProvider>
-          <div className="min-h-screen bg-gray-50">
-            {children}
-          </div>
+          <PostsProvider>
+            <div className="min-h-screen bg-gray-50">
+              {children}
+            </div>
+          </PostsProvider>
         </AuthProvider>
       </body>
     </html>

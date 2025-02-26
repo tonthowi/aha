@@ -4,6 +4,7 @@ import { HeartIcon, ChatBubbleLeftIcon, ArrowPathIcon, BookmarkIcon, LockClosedI
 import { HeartIcon as HeartSolidIcon, BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 import { PostDetailModal } from './PostDetailModal';
 import { useRouter } from 'next/navigation';
+import { getAvatarUrl } from '@/lib/utils';
 
 interface MediaAttachment {
   type: 'image' | 'video' | 'audio' | 'file';
@@ -152,9 +153,9 @@ export const TILPost: React.FC<TILPostProps> = ({
     >
       <div className="flex gap-4">
         <div className="flex-shrink-0">
-          <div className="relative h-10 w-10 rounded-full overflow-hidden">
+          <div className="relative h-10 w-10 rounded-full overflow-hidden bg-gray-100">
             <Image
-              src={post.author.avatar}
+              src={getAvatarUrl(post.author.name, post.author.avatar)}
               alt={`${post.author.name}'s avatar`}
               fill
               className="object-cover"

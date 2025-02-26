@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { HeartIcon, ChatBubbleLeftIcon, ArrowPathIcon, BookmarkIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon, BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
+import { getAvatarUrl } from '@/lib/utils';
 
 interface MediaAttachment {
   type: 'image' | 'video' | 'audio' | 'file';
@@ -96,9 +97,9 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
-                      <div className="relative h-12 w-12 rounded-full overflow-hidden">
+                      <div className="relative h-12 w-12 rounded-full overflow-hidden bg-gray-100">
                         <Image
-                          src={post.author.avatar}
+                          src={getAvatarUrl(post.author.name, post.author.avatar)}
                           alt={post.author.name}
                           fill
                           className="object-cover"

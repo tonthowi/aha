@@ -8,6 +8,7 @@ import { HeartIcon, ChatBubbleLeftIcon, ArrowPathIcon, BookmarkIcon, LockClosedI
 import { HeartIcon as HeartSolidIcon, BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid";
 import { usePosts } from "@/lib/contexts/PostsContext";
 import { useEffect } from "react";
+import { getAvatarUrl } from "@/lib/utils";
 
 export default function PostPage() {
   const router = useRouter();
@@ -89,9 +90,9 @@ export default function PostPage() {
           {/* Author info */}
           <div className="flex items-start gap-4 mb-6">
             <div className="flex-shrink-0">
-              <div className="relative h-12 w-12 rounded-full overflow-hidden">
+              <div className="relative h-12 w-12 rounded-full overflow-hidden bg-gray-100">
                 <Image
-                  src={post.author.avatar}
+                  src={getAvatarUrl(post.author.name, post.author.avatar)}
                   alt={`${post.author.name}'s avatar`}
                   fill
                   className="object-cover"
@@ -124,7 +125,7 @@ export default function PostPage() {
                 )}
               </div>
               <span 
-                className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 mt-2"
+                className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
                 role="status"
               >
                 {post.category}

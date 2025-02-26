@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 
 interface MediaAttachment {
@@ -12,7 +12,7 @@ interface MediaAttachment {
 
 interface Author {
   name: string;
-  avatar: string;
+  avatar?: string;
 }
 
 export interface Post {
@@ -37,7 +37,7 @@ const initialPosts: Post[] = [
     content: 'Today I learned about TypeScript generics and how they enable creating reusable components. They provide a way to make components work with any data type while still maintaining type safety. Here are some key concepts I discovered:\n\n1. Basic Generic Syntax\n2. Constraints using extends\n3. Default Type Parameters\n4. Generic Interfaces\n\nThis has really improved my understanding of type-safe components! 🚀',
     author: {
       name: 'John Doe',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John'
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&auto=format&fit=crop&q=60'
     },
     category: 'Programming',
     createdAt: '2025-02-25T06:30:00.000Z',
@@ -52,7 +52,7 @@ const initialPosts: Post[] = [
     content: 'Discovered some amazing features in Next.js 14 App Router! 🔥\n\nKey learnings:\n- Server Components by default\n- Nested Layouts\n- Server Actions\n- Streaming with Suspense\n- Route Handlers\n\nThe new mental model takes some getting used to, but the performance benefits are incredible! #webdev #nextjs',
     author: {
       name: 'Jane Smith',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jane'
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop&q=60'
     },
     category: 'Web Development',
     createdAt: '2025-02-24T14:15:00.000Z',
@@ -60,6 +60,20 @@ const initialPosts: Post[] = [
     likes: 38,
     comments: 7,
     bookmarks: 9
+  },
+  {
+    id: '3',
+    title: 'Testing Avatar Placeholder',
+    content: 'This is a test post to verify the avatar placeholder functionality.',
+    author: {
+      name: 'John Smith',
+    },
+    category: '💻 Programming',
+    createdAt: new Date().toISOString(),
+    isPrivate: false,
+    likes: 0,
+    comments: 0,
+    bookmarks: 0
   }
 ];
 
@@ -75,7 +89,7 @@ interface PostsContextType {
 
 const PostsContext = createContext<PostsContextType | undefined>(undefined);
 
-export function PostsProvider({ children }: { children: ReactNode }) {
+export const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<string>>(new Set());
@@ -139,12 +153,12 @@ export function PostsProvider({ children }: { children: ReactNode }) {
       {children}
     </PostsContext.Provider>
   );
-}
+};
 
-export function usePosts() {
+export const usePosts = () => {
   const context = useContext(PostsContext);
   if (context === undefined) {
     throw new Error('usePosts must be used within a PostsProvider');
   }
   return context;
-} 
+}; 

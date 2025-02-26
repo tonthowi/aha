@@ -17,7 +17,6 @@ interface Author {
 
 export interface Post {
   id: string;
-  title: string;
   content: string;
   author: Author;
   category: string;
@@ -33,13 +32,12 @@ export interface Post {
 const initialPosts: Post[] = [
   {
     id: '1',
-    title: 'Understanding TypeScript Generics',
     content: 'Today I learned about TypeScript generics and how they enable creating reusable components. They provide a way to make components work with any data type while still maintaining type safety. Here are some key concepts I discovered:\n\n1. Basic Generic Syntax\n2. Constraints using extends\n3. Default Type Parameters\n4. Generic Interfaces\n\nThis has really improved my understanding of type-safe components! 🚀',
     author: {
       name: 'John Doe',
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&auto=format&fit=crop&q=60'
     },
-    category: 'Programming',
+    category: '💻 Programming',
     createdAt: '2025-02-25T06:30:00.000Z',
     isPrivate: false,
     likes: 42,
@@ -48,13 +46,12 @@ const initialPosts: Post[] = [
   },
   {
     id: '2',
-    title: 'Next.js App Router Features',
     content: 'Discovered some amazing features in Next.js 14 App Router! 🔥\n\nKey learnings:\n- Server Components by default\n- Nested Layouts\n- Server Actions\n- Streaming with Suspense\n- Route Handlers\n\nThe new mental model takes some getting used to, but the performance benefits are incredible! #webdev #nextjs',
     author: {
       name: 'Jane Smith',
       avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop&q=60'
     },
-    category: 'Web Development',
+    category: '🌐 Web Development',
     createdAt: '2025-02-24T14:15:00.000Z',
     isPrivate: false,
     likes: 38,
@@ -63,7 +60,6 @@ const initialPosts: Post[] = [
   },
   {
     id: '3',
-    title: 'Testing Avatar Placeholder',
     content: 'This is a test post to verify the avatar placeholder functionality.',
     author: {
       name: 'John Smith',

@@ -7,7 +7,7 @@ import { Post } from '@/lib/contexts/PostsContext';
 // Dynamically import RichTextEditor with SSR disabled
 const RichTextEditor = dynamic(() => import('./RichTextEditor').then(mod => mod.RichTextEditor), {
   ssr: false,
-  loading: () => <div className="border rounded-lg p-4 min-h-[200px] bg-gray-50">Loading editor...</div>
+  loading: () => <div className="min-h-[150px] bg-transparent">Loading editor...</div>
 });
 
 interface MediaAttachment {
@@ -22,14 +22,12 @@ interface CreateTILPostProps {
 }
 
 export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
-  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
   const [media, setMedia] = useState<MediaAttachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const categoriesContainerRef = useRef<HTMLDivElement>(null);
 
   const categories = [
     '💻 Programming',
@@ -62,16 +60,25 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
     });
   };
 
+  // Check if content has at least 3 words
+  const hasMinimumWords = (text: string) => {
+    const words = text.trim().split(/\s+/);
+    return words.length >= 3 && words[0] !== '';
+  };
+
+  const isValid = hasMinimumWords(content) && selectedCategories.length > 0;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isValid) return;
+
     onSubmit({ 
-      title, 
       content, 
-      category: selectedCategories.join(', '), // Join multiple categories
+      category: selectedCategories.join(', '),
       isPrivate, 
       media 
     });
-    setTitle('');
+    
     setContent('');
     setSelectedCategories([]);
     setIsPrivate(false);
@@ -106,19 +113,15 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <input
-          type="text"
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      <div className="min-h-[150px]">
+        <RichTextEditor
+          content={content}
+          onChange={setContent}
           placeholder="What did you learn today?"
-          required
         />
       </div>
 
-      <div ref={categoriesContainerRef} className="space-y-2">
+      <div className="space-y-2">
         <div className="flex flex-wrap gap-2">
           {categories.slice(0, showAllCategories ? undefined : 12).map((category) => (
             <button
@@ -149,21 +152,26 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
         )}
       </div>
 
-      <div>
-        <RichTextEditor
-          content={content}
-          onChange={setContent}
-          placeholder="Share what you learned..."
-        />
-      </div>
-
       {/* Media Preview */}
       {media.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+        <div className={`grid gap-2 mt-4 ${
+          media.length === 1 ? 'grid-cols-1' :
+          media.length === 2 ? 'grid-cols-2' :
+          media.length === 3 ? 'grid-cols-2' :
+          'grid-cols-2'
+        }`}>
           {media.map((item, index) => (
-            <div key={index} className="relative group">
+            <div 
+              key={index} 
+              className={`relative ${
+                media.length === 1 ? 'aspect-[16/9]' :
+                media.length === 2 ? 'aspect-square' :
+                index === 0 && media.length === 3 ? 'aspect-square col-span-2' :
+                'aspect-square'
+              }`}
+            >
               {item.type === 'image' && (
-                <div className="relative h-40 w-full rounded-lg overflow-hidden">
+                <div className="relative h-full w-full rounded-2xl overflow-hidden">
                   <Image
                     src={item.url}
                     alt={item.filename}
@@ -173,22 +181,22 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
                 </div>
               )}
               {item.type === 'video' && (
-                <video src={item.url} className="h-40 w-full rounded-lg object-cover" />
+                <video src={item.url} className="h-full w-full rounded-2xl object-cover" />
               )}
               {item.type === 'audio' && (
-                <div className="h-40 w-full rounded-lg bg-gray-100 flex items-center justify-center">
+                <div className="h-full w-full rounded-2xl bg-gray-100 flex items-center justify-center">
                   <MusicalNoteIcon className="w-12 h-12 text-gray-400" />
                 </div>
               )}
               {item.type === 'file' && (
-                <div className="h-40 w-full rounded-lg bg-gray-100 flex items-center justify-center">
+                <div className="h-full w-full rounded-2xl bg-gray-100 flex items-center justify-center">
                   <PaperClipIcon className="w-12 h-12 text-gray-400" />
                 </div>
               )}
               <button
                 type="button"
                 onClick={() => removeMedia(index)}
-                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1.5 hover:bg-black/70 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -257,7 +265,12 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
           </button>
           <button
             type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+            disabled={!isValid}
+            className={`px-4 py-2 rounded-full font-medium transition-colors ${
+              isValid
+                ? 'bg-blue-500 text-white hover:bg-blue-600'
+                : 'bg-blue-200 text-white cursor-not-allowed'
+            }`}
           >
             Post
           </button>

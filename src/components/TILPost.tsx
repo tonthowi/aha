@@ -5,6 +5,7 @@ import { HeartIcon as HeartSolidIcon, BookmarkIcon as BookmarkSolidIcon } from '
 import { PostDetailModal } from './PostDetailModal';
 import { useRouter } from 'next/navigation';
 import { getAvatarUrl } from '@/lib/utils';
+import { useRef, useEffect, useState } from 'react';
 
 interface MediaAttachment {
   type: 'image' | 'video' | 'audio' | 'file';
@@ -20,7 +21,6 @@ interface Author {
 
 interface Post {
   id: string;
-  title: string;
   content: string;
   author: Author;
   category: string;
@@ -48,6 +48,22 @@ export const TILPost: React.FC<TILPostProps> = ({
   isBookmarked,
 }) => {
   const router = useRouter();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [isContentTruncated, setIsContentTruncated] = useState(false);
+
+  useEffect(() => {
+    const checkContentHeight = () => {
+      if (contentRef.current) {
+        const maxHeight = 320; // 20rem
+        setIsContentTruncated(contentRef.current.scrollHeight > maxHeight);
+      }
+    };
+
+    checkContentHeight();
+    // Re-check when window is resized
+    window.addEventListener('resize', checkContentHeight);
+    return () => window.removeEventListener('resize', checkContentHeight);
+  }, [post.content]);
 
   // Parse categories string into array and format display
   const formatCategories = (categoryString: string) => {
@@ -139,11 +155,11 @@ export const TILPost: React.FC<TILPostProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       whileHover={{ scale: 1.02 }}
-      className="p-6 cursor-pointer bg-white shadow-sm hover:shadow-md transition-colors rounded-2xl"
+      className="p-6 cursor-pointer bg-white shadow-sm hover:shadow-md transition-colors rounded-2xl relative"
       onClick={() => router.push(`/post/${post.id}`)}
       tabIndex={0}
       role="button"
-      aria-label={`View details of post: ${post.title}`}
+      aria-label={`View details of post: ${post.id}`}
       onKeyDown={(e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -197,11 +213,34 @@ export const TILPost: React.FC<TILPostProps> = ({
           </div>
 
           <div className="mt-3">
-            <h2 className="font-bold">{post.title}</h2>
             <div 
-              className="prose prose-sm mt-1 line-clamp-4 text-gray-800"
-              dangerouslySetInnerHTML={{ __html: post.content }}
-            />
+              ref={contentRef}
+              className={`prose prose-sm text-gray-800 relative ${
+                isContentTruncated ? 'max-h-[20rem] overflow-hidden' : ''
+              }`}
+            >
+              <div dangerouslySetInnerHTML={{ __html: post.content }} />
+              {isContentTruncated && (
+                <>
+                  <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
+                  <div 
+                    className="absolute bottom-0 left-0 right-0 flex justify-center pb-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/post/${post.id}`);
+                    }}
+                  >
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-4 py-1 text-sm font-medium text-blue-600 hover:text-blue-700 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:shadow-md transition-all"
+                    >
+                      Read More →
+                    </motion.button>
+                  </div>
+                </>
+              )}
+            </div>
 
             {renderMediaThumbnails()}
           </div>
@@ -247,16 +286,6 @@ export const TILPost: React.FC<TILPostProps> = ({
                   <ChatBubbleLeftIcon className="w-5 h-5 group-hover:text-blue-500" aria-hidden="true" />
                 </div>
                 <span className="text-sm group-hover:text-blue-500">{post.comments}</span>
-              </motion.button>
-
-              <motion.button 
-                whileTap={{ scale: 0.9 }}
-                className="group flex items-center gap-2 text-gray-500"
-                aria-label="Share post"
-              >
-                <div className="p-2 -m-2 group-hover:bg-green-50 rounded-full transition-colors">
-                  <ArrowPathIcon className="w-5 h-5 group-hover:text-green-500" aria-hidden="true" />
-                </div>
               </motion.button>
             </div>
 

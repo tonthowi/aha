@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { HeartIcon, ChatBubbleLeftIcon, ArrowPathIcon, BookmarkIcon, LockClosedIcon, GlobeAltIcon } from "@heroicons/react/24/outline";
+import { HeartIcon, ChatBubbleLeftIcon, BookmarkIcon, LockClosedIcon, GlobeAltIcon } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon, BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid";
 import { usePosts } from "@/lib/contexts/PostsContext";
 import { useEffect } from "react";
@@ -184,16 +184,6 @@ export default function PostPage() {
                     <ChatBubbleLeftIcon className="w-6 h-6 group-hover:text-blue-500" aria-hidden="true" />
                   </div>
                   <span className="text-sm group-hover:text-blue-500">{post.comments}</span>
-                </motion.button>
-
-                <motion.button 
-                  whileTap={{ scale: 0.9 }}
-                  className="group flex items-center gap-2 text-gray-500"
-                  aria-label="Share post"
-                >
-                  <div className="p-2 -m-2 group-hover:bg-green-50 rounded-full transition-colors">
-                    <ArrowPathIcon className="w-6 h-6 group-hover:text-green-500" aria-hidden="true" />
-                  </div>
                 </motion.button>
               </div>
 

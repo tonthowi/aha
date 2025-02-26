@@ -14,7 +14,6 @@ interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (post: {
-    title: string;
     content: string;
     category: string;
     isPrivate: boolean;
@@ -39,21 +38,23 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
                 className="w-full"
-                style={{ maxWidth: "640px" }} // Match post card width
+                style={{ maxWidth: "640px" }}
               >
-                <Dialog.Panel className="w-full transform overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all mt-28">
+                <Dialog.Panel className="w-full transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all mt-28">
                   <Dialog.Title
                     as="h3"
-                    className="text-lg font-medium leading-6 text-gray-900 mb-4"
+                    className="text-lg font-medium leading-6 text-gray-900 p-4 border-b"
                   >
-                    What did you learn today?
+                    Share your learning
                   </Dialog.Title>
-                  <CreateTILPost
-                    onSubmit={(post) => {
-                      onSubmit(post);
-                      onClose();
-                    }}
-                  />
+                  <div className="p-4">
+                    <CreateTILPost
+                      onSubmit={(post) => {
+                        onSubmit(post);
+                        onClose();
+                      }}
+                    />
+                  </div>
                 </Dialog.Panel>
               </motion.div>
             </div>

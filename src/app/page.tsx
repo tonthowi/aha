@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { CreatePostModal } from "@/components/CreatePostModal";
 import { TILFeed } from "@/components/TILFeed";
 import { usePosts } from "@/lib/contexts/PostsContext";
@@ -22,10 +23,20 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 py-8">
       <main className="max-w-2xl mx-auto px-4 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Today I Learned</h1>
-          <div className="flex items-center gap-4">
-            <AuthButton />
+          <div className="relative w-16 h-16">
+            <Image
+              src="/TIL logo.svg"
+              alt="Today I Learned"
+              fill
+              className="object-contain"
+              priority
+            />
           </div>
+          {user && (
+            <div className="flex items-center gap-4">
+              <AuthButton />
+            </div>
+          )}
         </div>
 
         <motion.button
@@ -47,7 +58,15 @@ export default function Home() {
               <span className="text-gray-500 text-sm font-medium">Today I Learned...</span>
             </>
           ) : (
-            <span className="text-gray-500 text-sm font-medium w-full text-center">Sign in to post your daily TILs</span>
+            <div className="flex items-center justify-center w-full gap-2">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M23.766 12.277c0-.816-.067-1.636-.207-2.438H12.24v4.621h6.482c-.28 1.564-1.13 2.892-2.407 3.777v3.133h3.887c2.27-2.097 3.575-5.186 3.575-9.093z" fill="#4285F4"/>
+                <path d="M12.24 24c3.24 0 5.956-1.075 7.961-2.907l-3.887-3.133c-1.079.752-2.458 1.195-4.074 1.195-3.13 0-5.78-2.122-6.729-4.975h-4.02v3.233C3.534 21.27 7.565 24 12.24 24z" fill="#34A853"/>
+                <path d="M5.511 14.18c-.24-.72-.377-1.49-.377-2.28 0-.79.137-1.56.377-2.28V6.387h-4.02C.577 8.008 0 10.02 0 12.1c0 2.08.577 4.092 1.491 5.713l4.02-3.233z" fill="#FBBC05"/>
+                <path d="M12.24 4.844c1.763 0 3.347.607 4.595 1.794l3.45-3.45C18.205 1.19 15.489 0 12.24 0 7.565 0 3.534 2.73 1.491 6.387l4.02 3.233c.949-2.853 3.599-4.975 6.729-4.975z" fill="#EA4335"/>
+              </svg>
+              <span className="text-gray-500 text-sm font-medium">Sign in to post your daily TILs</span>
+            </div>
           )}
         </motion.button>
 

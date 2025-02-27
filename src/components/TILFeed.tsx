@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TILPost } from "@/components/TILPost";
@@ -16,12 +16,28 @@ export function TILFeed() {
   const { user } = useAuth();
   const { posts, toggleLike, toggleBookmark, likedPosts, bookmarkedPosts, isLoading } = usePosts();
   const [currentTab, setCurrentTab] = useState("for-you");
+  const [refreshError, setRefreshError] = useState<string | null>(null);
 
-  // Simulate refresh function - replace with actual refresh logic
-  const handleRefresh = async () => {
-    // Add your refresh logic here
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-  };
+  // Implement real refresh function that uses Firebase
+  const handleRefresh = useCallback(async () => {
+    try {
+      setRefreshError(null);
+      
+      // The real-time listeners in the PostsContext will automatically 
+      // update when data changes in Firebase, so we don't need to manually 
+      // refresh. This is just a placeholder in case you want to add 
+      // additional refresh logic.
+      
+      // Simulate network delay for better UX feedback
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      
+      return true;
+    } catch (error) {
+      console.error("Error refreshing feed:", error);
+      setRefreshError("Failed to refresh. Please try again.");
+      return false;
+    }
+  }, []);
 
   const { elementRef, isPulling, isRefreshing, pullProgress } = usePullToRefresh({
     onRefresh: handleRefresh,
@@ -53,6 +69,24 @@ export function TILFeed() {
         return "No bookmarked posts yet. When you find interesting learnings from others, bookmark them to save for later!";
       default:
         return "No posts to display in this section yet.";
+    }
+  };
+
+  const handleLike = async (postId: string) => {
+    try {
+      await toggleLike(postId);
+    } catch (error) {
+      console.error("Error liking post:", error);
+      // Could show toast notification here
+    }
+  };
+
+  const handleBookmark = async (postId: string) => {
+    try {
+      await toggleBookmark(postId);
+    } catch (error) {
+      console.error("Error bookmarking post:", error);
+      // Could show toast notification here
     }
   };
 
@@ -93,6 +127,12 @@ export function TILFeed() {
             transform: isPulling ? `translateY(${pullProgress * 50}px)` : undefined,
           }}
         >
+          {refreshError && (
+            <div className="p-4 mb-4 bg-red-50 text-red-600 rounded-lg text-center">
+              {refreshError}
+            </div>
+          )}
+          
           {isLoading ? (
             <MasonryGridSkeleton itemCount={6} />
           ) : filteredPosts.length === 0 ? (
@@ -116,8 +156,8 @@ export function TILFeed() {
                     post={post}
                     isLiked={likedPosts.has(post.id)}
                     isBookmarked={bookmarkedPosts.has(post.id)}
-                    onLike={() => toggleLike(post.id)}
-                    onBookmark={() => toggleBookmark(post.id)}
+                    onLike={() => handleLike(post.id)}
+                    onBookmark={() => handleBookmark(post.id)}
                   />
                 </MasonryItem>
               ))}

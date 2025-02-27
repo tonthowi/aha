@@ -1,7 +1,20 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { PostRecord } from '@/lib/types/schema';
+import { 
+  createPost,
+  getPosts, 
+  getPostById,
+  getUserLikes,
+  getUserBookmarks,
+  subscribeToPostUpdates,
+  subscribeToUserLikes,
+  subscribeToUserBookmarks,
+  toggleLike as firebaseToggleLike,
+  toggleBookmark as firebaseToggleBookmark
+} from '@/lib/firebase/firebaseUtils';
 
 interface MediaAttachment {
   type: 'image' | 'video' | 'audio' | 'file';
@@ -75,76 +88,125 @@ const initialPosts: Post[] = [
 
 interface PostsContextType {
   posts: Post[];
-  addPost: (post: Omit<Post, 'id' | 'author' | 'createdAt' | 'likes' | 'comments' | 'bookmarks'>) => void;
-  getPost: (id: string) => Post | undefined;
+  addPost: (post: Omit<Post, 'id' | 'author' | 'createdAt' | 'likes' | 'comments' | 'bookmarks'>) => Promise<string>;
+  getPost: (id: string) => Promise<Post | null>;
   likedPosts: Set<string>;
   bookmarkedPosts: Set<string>;
   isLoading: boolean;
-  toggleLike: (postId: string) => void;
-  toggleBookmark: (postId: string) => void;
+  toggleLike: (postId: string) => Promise<void>;
+  toggleBookmark: (postId: string) => Promise<void>;
 }
 
 const PostsContext = createContext<PostsContextType | undefined>(undefined);
 
+// Convert Firebase PostRecord to Post for UI
+function convertFirebasePostToUIPost(postRecord: PostRecord): Post {
+  return {
+    id: postRecord.id,
+    content: postRecord.content,
+    author: {
+      name: postRecord.authorName,
+      avatar: postRecord.authorPhotoURL,
+    },
+    category: postRecord.category,
+    createdAt: postRecord.createdAt,
+    isPrivate: postRecord.isPrivate,
+    media: postRecord.media,
+    likes: postRecord.likeCount,
+    comments: postRecord.commentCount,
+    bookmarks: postRecord.bookmarkCount,
+  };
+}
+
 export function PostsProvider({ children }: { children: ReactNode }) {
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  // Simulate loading delay
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
+  // Load posts from Firebase on component mount
+  useEffect(() => {
+    setIsLoading(true);
+    
+    // Set up real-time listeners
+    const unsubscribePosts = subscribeToPostUpdates((postRecords) => {
+      const convertedPosts = postRecords.map(convertFirebasePostToUIPost);
+      setPosts(convertedPosts);
       setIsLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const addPost = (postData: Omit<Post, 'id' | 'author' | 'createdAt' | 'likes' | 'comments' | 'bookmarks'>) => {
-    const newPost: Post = {
-      id: Date.now().toString(),
-      ...postData,
-      author: {
-        name: user?.displayName || 'Anonymous User',
-        avatar: user?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${Date.now()}`
-      },
-      createdAt: new Date().toISOString(),
-      likes: 0,
-      comments: 0,
-      bookmarks: 0
+    });
+    
+    // Clean up listeners on unmount
+    return () => {
+      unsubscribePosts();
     };
-
-    setPosts(prevPosts => [newPost, ...prevPosts]);
-  };
-
-  const getPost = (id: string) => {
-    return posts.find(post => post.id === id);
-  };
-
-  const toggleLike = (postId: string) => {
-    setLikedPosts((prev) => {
-      const next = new Set(prev);
-      if (next.has(postId)) {
-        next.delete(postId);
-      } else {
-        next.add(postId);
-      }
-      return next;
+  }, []);
+  
+  // Load user's likes and bookmarks when user changes
+  useEffect(() => {
+    if (!user) {
+      setLikedPosts(new Set());
+      setBookmarkedPosts(new Set());
+      return;
+    }
+    
+    // Set up realtime listeners for likes and bookmarks
+    const unsubscribeLikes = subscribeToUserLikes(user.uid, (likedPostIds) => {
+      setLikedPosts(new Set(likedPostIds));
     });
+    
+    const unsubscribeBookmarks = subscribeToUserBookmarks(user.uid, (bookmarkedPostIds) => {
+      setBookmarkedPosts(new Set(bookmarkedPostIds));
+    });
+    
+    // Clean up listeners on unmount or when user changes
+    return () => {
+      unsubscribeLikes();
+      unsubscribeBookmarks();
+    };
+  }, [user]);
+  
+  const addPost = async (postData: Omit<Post, 'id' | 'author' | 'createdAt' | 'likes' | 'comments' | 'bookmarks'>): Promise<string> => {
+    if (!user) {
+      throw new Error("You must be logged in to create a post");
+    }
+    
+    // Convert to Firebase format
+    const firebasePostData = {
+      content: postData.content,
+      category: postData.category,
+      authorId: user.uid,
+      authorName: user.displayName || 'Anonymous User',
+      authorPhotoURL: user.photoURL || undefined,
+      isPrivate: postData.isPrivate,
+      media: postData.media || [],
+    };
+    
+    // Create post in Firebase
+    const postId = await createPost(firebasePostData);
+    
+    return postId;
   };
 
-  const toggleBookmark = (postId: string) => {
-    setBookmarkedPosts((prev) => {
-      const next = new Set(prev);
-      if (next.has(postId)) {
-        next.delete(postId);
-      } else {
-        next.add(postId);
-      }
-      return next;
-    });
+  const getPost = async (id: string): Promise<Post | null> => {
+    const postRecord = await getPostById(id);
+    return postRecord ? convertFirebasePostToUIPost(postRecord) : null;
+  };
+
+  const toggleLike = async (postId: string): Promise<void> => {
+    if (!user) {
+      throw new Error("You must be logged in to like posts");
+    }
+    
+    await firebaseToggleLike(postId, user.uid);
+  };
+
+  const toggleBookmark = async (postId: string): Promise<void> => {
+    if (!user) {
+      throw new Error("You must be logged in to bookmark posts");
+    }
+    
+    await firebaseToggleBookmark(postId, user.uid);
   };
 
   return (

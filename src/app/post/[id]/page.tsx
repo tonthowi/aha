@@ -7,8 +7,9 @@ import Image from "next/image";
 import { HeartIcon, ChatBubbleLeftIcon, BookmarkIcon, LockClosedIcon, GlobeAltIcon } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon, BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid";
 import { usePosts } from "@/lib/contexts/PostsContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getAvatarUrl } from "@/lib/utils";
+import { Post } from "@/lib/contexts/PostsContext";
 
 export default function PostPage() {
   const router = useRouter();
@@ -16,17 +17,64 @@ export default function PostPage() {
   const postId = params.id as string;
   const { getPost, likedPosts, bookmarkedPosts, toggleLike, toggleBookmark } = usePosts();
   
-  const post = getPost(postId);
+  const [post, setPost] = useState<Post | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // If post not found, redirect to home
+  // Fetch post data
   useEffect(() => {
-    if (!post) {
-      router.push('/');
-    }
-  }, [post, router]);
+    const fetchPost = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const postData = await getPost(postId);
+        
+        if (!postData) {
+          setError("Post not found");
+          router.push('/');
+          return;
+        }
+        
+        setPost(postData);
+      } catch (err) {
+        console.error("Error fetching post:", err);
+        setError("Failed to load post");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchPost();
+  }, [postId, getPost, router]);
 
-  if (!post) {
-    return null;
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-pulse text-center">
+          <div className="h-8 w-32 bg-gray-200 rounded mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading post...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !post) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-red-500 mb-2">Error</h1>
+          <p className="text-gray-700">{error || "Post not found"}</p>
+          <button 
+            onClick={() => router.push('/')}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const isLiked = likedPosts.has(postId);

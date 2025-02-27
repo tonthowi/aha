@@ -16,7 +16,7 @@ interface MediaAttachment {
 
 interface Author {
   name: string;
-  avatar: string;
+  avatar?: string;
 }
 
 interface Post {
@@ -67,9 +67,7 @@ export const TILPost: React.FC<TILPostProps> = ({
 
   // Parse categories string into array and format display
   const formatCategories = (categoryString: string) => {
-    const categories = categoryString.split(', ');
-    if (categories.length <= 1) return categories[0];
-    return `${categories[0]} ${categories.length - 1}+`;
+    return categoryString.split(', ');
   };
 
   const renderMediaThumbnails = () => {
@@ -167,147 +165,139 @@ export const TILPost: React.FC<TILPostProps> = ({
         }
       }}
     >
-      <div className="flex gap-4">
-        <div className="flex-shrink-0">
-          <div className="relative h-10 w-10 rounded-full overflow-hidden bg-gray-100">
-            <Image
-              src={getAvatarUrl(post.author.name, post.author.avatar)}
-              alt={`${post.author.name}'s avatar`}
-              fill
-              className="object-cover"
-            />
-          </div>
-        </div>
-        
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between pb-4 border-b">
-            <div className="flex items-center gap-2 text-sm flex-wrap">
-              <span className="font-bold truncate">{post.author.name}</span>
-              <span className="text-gray-500" aria-hidden="true">·</span>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <div className="relative h-10 w-10 rounded-full overflow-hidden bg-gray-100">
+                <Image
+                  src={getAvatarUrl(post.author.name, post.author.avatar)}
+                  alt={`${post.author.name}'s avatar`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </div>
+            
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold text-sm truncate">{post.author.name}</span>
               <time 
-                className="text-gray-500"
+                className="text-sm text-gray-500"
                 dateTime={post.createdAt}
                 suppressHydrationWarning
               >
                 {new Date(post.createdAt).toLocaleDateString()}
               </time>
-              <span className="text-gray-500" aria-hidden="true">·</span>
-              {post.isPrivate ? (
-                <div className="flex items-center gap-1 text-yellow-600 ml-2" role="status">
-                  <LockClosedIcon className="w-4 h-4" aria-hidden="true" />
-                  <span className="text-sm">Private</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1 text-green-600 ml-2" role="status">
-                  <GlobeAltIcon className="w-4 h-4" aria-hidden="true" />
-                  <span className="text-sm">Public</span>
-                </div>
-              )}
             </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {formatCategories(post.category).map((category, index) => (
             <span 
-              className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700"
-              role="status"
+              key={index}
+              className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700"
             >
-              {formatCategories(post.category)}
+              {category}
             </span>
-          </div>
+          ))}
+        </div>
 
-          <div className="mt-3">
-            <div 
-              ref={contentRef}
-              className={`prose prose-sm text-gray-800 relative ${
-                isContentTruncated ? 'max-h-[20rem] overflow-hidden' : ''
-              }`}
-            >
-              <div dangerouslySetInnerHTML={{ __html: post.content }} />
-              {isContentTruncated && (
-                <>
-                  <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
-                  <div 
-                    className="absolute bottom-0 left-0 right-0 flex justify-center pb-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/post/${post.id}`);
-                    }}
-                  >
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="px-4 py-1 text-sm font-medium text-blue-600 hover:text-blue-700 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:shadow-md transition-all"
-                    >
-                      Read More →
-                    </motion.button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {renderMediaThumbnails()}
-          </div>
-
-          <div className="flex items-center justify-between mt-3" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-10">
-              <motion.button
-                onClick={onLike}
-                whileTap={{ scale: 0.9 }}
-                className="group flex items-center gap-2 text-gray-500"
-                aria-label={`${isLiked ? 'Unlike' : 'Like'} post (${post.likes + (isLiked ? 1 : 0)} likes)`}
-                aria-pressed={isLiked}
-              >
-                <motion.div 
-                  className="p-2 -m-2 group-hover:bg-red-50 rounded-full transition-colors"
-                  animate={isLiked ? { scale: [1, 1.2, 1] } : {}}
+        <div className="mt-1">
+          <div 
+            ref={contentRef}
+            className={`prose prose-sm text-gray-800 relative ${
+              isContentTruncated ? 'max-h-[20rem] overflow-hidden' : ''
+            }`}
+          >
+            <div dangerouslySetInnerHTML={{ __html: post.content }} />
+            {isContentTruncated && (
+              <>
+                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
+                <div 
+                  className="absolute bottom-0 left-0 right-0 flex justify-center pb-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/post/${post.id}`);
+                  }}
                 >
-                  {isLiked ? (
-                    <HeartSolidIcon className="w-5 h-5 text-red-500" aria-hidden="true" />
-                  ) : (
-                    <HeartIcon className="w-5 h-5 group-hover:text-red-500" aria-hidden="true" />
-                  )}
-                </motion.div>
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={post.likes + (isLiked ? 1 : 0)}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className={`text-sm ${isLiked ? 'text-red-500' : 'group-hover:text-red-500'}`}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-4 py-1 text-sm font-medium text-blue-600 hover:text-blue-700 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:shadow-md transition-all"
                   >
-                    {post.likes + (isLiked ? 1 : 0)}
-                  </motion.span>
-                </AnimatePresence>
-              </motion.button>
-
-              <motion.button 
-                whileTap={{ scale: 0.9 }}
-                className="group flex items-center gap-2 text-gray-500"
-                aria-label={`${post.comments} comments`}
-              >
-                <div className="p-2 -m-2 group-hover:bg-blue-50 rounded-full transition-colors">
-                  <ChatBubbleLeftIcon className="w-5 h-5 group-hover:text-blue-500" aria-hidden="true" />
+                    Read More →
+                  </motion.button>
                 </div>
-                <span className="text-sm group-hover:text-blue-500">{post.comments}</span>
-              </motion.button>
-            </div>
+              </>
+            )}
+          </div>
 
+          {renderMediaThumbnails()}
+        </div>
+
+        <div className="flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-10">
             <motion.button
+              onClick={onLike}
               whileTap={{ scale: 0.9 }}
-              onClick={onBookmark}
-              className="group p-2 -m-2 text-gray-500"
-              aria-label={`${isBookmarked ? 'Remove bookmark' : 'Bookmark'} post`}
-              aria-pressed={isBookmarked}
+              className="group flex items-center gap-2 text-gray-500"
+              aria-label={`${isLiked ? 'Unlike' : 'Like'} post (${post.likes + (isLiked ? 1 : 0)} likes)`}
+              aria-pressed={isLiked}
             >
               <motion.div 
-                className="group-hover:bg-yellow-50 rounded-full p-2 -m-2 transition-colors"
-                animate={isBookmarked ? { scale: [1, 1.2, 1] } : {}}
+                className="p-2 -m-2 group-hover:bg-red-50 rounded-full transition-colors"
+                animate={isLiked ? { scale: [1, 1.2, 1] } : {}}
               >
-                {isBookmarked ? (
-                  <BookmarkSolidIcon className="w-5 h-5 text-yellow-500" aria-hidden="true" />
+                {isLiked ? (
+                  <HeartSolidIcon className="w-5 h-5 text-red-500" aria-hidden="true" />
                 ) : (
-                  <BookmarkIcon className="w-5 h-5 group-hover:text-yellow-500" aria-hidden="true" />
+                  <HeartIcon className="w-5 h-5 group-hover:text-red-500" aria-hidden="true" />
                 )}
               </motion.div>
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={post.likes + (isLiked ? 1 : 0)}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className={`text-sm ${isLiked ? 'text-red-500' : 'group-hover:text-red-500'}`}
+                >
+                  {post.likes + (isLiked ? 1 : 0)}
+                </motion.span>
+              </AnimatePresence>
+            </motion.button>
+
+            <motion.button 
+              whileTap={{ scale: 0.9 }}
+              className="group flex items-center gap-2 text-gray-500"
+              aria-label={`${post.comments} comments`}
+            >
+              <div className="p-2 -m-2 group-hover:bg-blue-50 rounded-full transition-colors">
+                <ChatBubbleLeftIcon className="w-5 h-5 group-hover:text-blue-500" aria-hidden="true" />
+              </div>
+              <span className="text-sm group-hover:text-blue-500">{post.comments}</span>
             </motion.button>
           </div>
+
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={onBookmark}
+            className="group p-2 -m-2 text-gray-500"
+            aria-label={`${isBookmarked ? 'Remove bookmark' : 'Bookmark'} post`}
+            aria-pressed={isBookmarked}
+          >
+            <motion.div 
+              className="group-hover:bg-yellow-50 rounded-full p-2 -m-2 transition-colors"
+              animate={isBookmarked ? { scale: [1, 1.2, 1] } : {}}
+            >
+              {isBookmarked ? (
+                <BookmarkSolidIcon className="w-5 h-5 text-yellow-500" aria-hidden="true" />
+              ) : (
+                <BookmarkIcon className="w-5 h-5 group-hover:text-yellow-500" aria-hidden="true" />
+              )}
+            </motion.div>
+          </motion.button>
         </div>
       </div>
     </motion.article>

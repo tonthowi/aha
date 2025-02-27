@@ -135,7 +135,6 @@ export default function PostPage() {
 
           {/* Post content */}
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold">{post.title}</h2>
             <div 
               className="prose prose-lg max-w-none"
               dangerouslySetInnerHTML={{ __html: post.content }}

@@ -21,7 +21,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <main className="max-w-2xl mx-auto px-4 space-y-6">
+      <main className="max-w-4xl mx-auto px-4 space-y-6">
         <div className="flex items-center justify-between">
           <div className="relative w-16 h-16">
             <Image

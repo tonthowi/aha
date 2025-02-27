@@ -79,17 +79,28 @@ interface PostsContextType {
   getPost: (id: string) => Post | undefined;
   likedPosts: Set<string>;
   bookmarkedPosts: Set<string>;
+  isLoading: boolean;
   toggleLike: (postId: string) => void;
   toggleBookmark: (postId: string) => void;
 }
 
 const PostsContext = createContext<PostsContextType | undefined>(undefined);
 
-export const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export function PostsProvider({ children }: { children: ReactNode }) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+
+  // Simulate loading delay
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const addPost = (postData: Omit<Post, 'id' | 'author' | 'createdAt' | 'likes' | 'comments' | 'bookmarks'>) => {
     const newPost: Post = {
@@ -113,7 +124,7 @@ export const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const toggleLike = (postId: string) => {
-    setLikedPosts(prev => {
+    setLikedPosts((prev) => {
       const next = new Set(prev);
       if (next.has(postId)) {
         next.delete(postId);
@@ -125,7 +136,7 @@ export const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const toggleBookmark = (postId: string) => {
-    setBookmarkedPosts(prev => {
+    setBookmarkedPosts((prev) => {
       const next = new Set(prev);
       if (next.has(postId)) {
         next.delete(postId);
@@ -137,24 +148,27 @@ export const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   return (
-    <PostsContext.Provider value={{
-      posts,
-      addPost,
-      getPost,
-      likedPosts,
-      bookmarkedPosts,
-      toggleLike,
-      toggleBookmark,
-    }}>
+    <PostsContext.Provider
+      value={{
+        posts,
+        addPost,
+        getPost,
+        likedPosts,
+        bookmarkedPosts,
+        isLoading,
+        toggleLike,
+        toggleBookmark,
+      }}
+    >
       {children}
     </PostsContext.Provider>
   );
-};
+}
 
-export const usePosts = () => {
+export function usePosts() {
   const context = useContext(PostsContext);
   if (context === undefined) {
     throw new Error('usePosts must be used within a PostsProvider');
   }
   return context;
-}; 
+} 

@@ -113,19 +113,19 @@ export function TILFeed() {
             <TabsList className="w-full grid grid-cols-3 p-1 bg-transparent">
               <TabsTrigger 
                 value="for-you"
-                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-lg transition-colors"
+                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-xl transition-colors"
               >
                 💎 For You
               </TabsTrigger>
               <TabsTrigger 
                 value="today-i-learned"
-                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-lg transition-colors"
+                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-xl transition-colors"
               >
                 💡 Mine
               </TabsTrigger>
               <TabsTrigger 
                 value="bookmarked"
-                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-lg transition-colors"
+                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-xl transition-colors"
               >
                 🔖 Saved
               </TabsTrigger>

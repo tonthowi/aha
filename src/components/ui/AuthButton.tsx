@@ -12,32 +12,41 @@ export function AuthButton() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="flex items-center gap-2 p-1 rounded-full hover:bg-[#f7f7f7] transition-colors"
+          className="flex items-center gap-2 p-1 rounded-full hover:opacity-80 transition-opacity"
         >
-          <Link href="/profile">
-            <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#e6e6e6]">
-              <Image
-                src={user.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'}
-                alt="Profile picture"
-                fill
-                className="object-cover"
-              />
-            </div>
-          </Link>
+          <div className="relative w-8 h-8 rounded-full overflow-hidden">
+            <Image
+              src={user.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'}
+              alt="Profile picture"
+              fill
+              className="object-cover"
+            />
+          </div>
         </motion.button>
-        <div className="dropdown-menu invisible group-hover:visible">
-          <Link 
-            href="/profile"
-            className="dropdown-item"
-          >
-            Profile
-          </Link>
-          <button
-            onClick={signOut}
-            className="w-full text-left dropdown-item text-red-600 hover:text-red-700"
-          >
-            Sign out
-          </button>
+        <div className="absolute right-0 mt-1 w-[280px] bg-[#f7f7f7] rounded-xl shadow-sm border border-[#e6e6e6] invisible group-hover:visible z-50 transform opacity-0 group-hover:opacity-100 transition-all duration-200">
+          <div className="px-4 py-3">
+            <div className="text-[15px] font-medium text-gray-900">
+              {user.displayName || 'User'}
+            </div>
+            <div className="text-[13px] text-gray-500">
+              {user.email}
+            </div>
+          </div>
+          <div className="h-[1px] bg-[#e6e6e6]"></div>
+          <div className="p-1">
+            <Link 
+              href="/profile"
+              className="block px-3 py-[6px] text-[15px] text-gray-600 hover:bg-white rounded-lg transition-all duration-150"
+            >
+              Profile
+            </Link>
+            <button
+              onClick={signOut}
+              className="w-full text-left px-3 py-[6px] text-[15px] text-gray-600 hover:bg-white rounded-lg transition-all duration-150"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -48,7 +57,7 @@ export function AuthButton() {
       onClick={signInWithGoogle}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
-      className="btn-primary"
+      className="inline-flex items-center px-4 py-2 rounded-md bg-black text-white hover:opacity-80 transition-opacity text-sm font-medium"
     >
       <div className="flex items-center gap-2">
         <svg className="w-5 h-5" viewBox="0 0 24 24">

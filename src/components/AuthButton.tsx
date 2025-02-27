@@ -263,12 +263,11 @@ export function AuthButton() {
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="flex items-center gap-2 p-1 rounded-full hover:bg-[#f7f7f7] transition-colors"
           aria-expanded={isDropdownOpen}
           aria-haspopup="true"
           onKeyDown={handleKeyDown}
         >
-          <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#e6e6e6]">
+          <div className="relative card-shadow-hover hover:border hover:border-white w-10 h-10 overflow-hidden">
             <Image
               src={user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid || 'default'}`}
               alt={`${user.displayName || 'User'}'s profile picture`}
@@ -281,10 +280,10 @@ export function AuthButton() {
 
         {isDropdownOpen && (
           <div 
-            className="dropdown-menu"
+            className="dropdown-menu card-shadow-hover"
             onKeyDown={handleMenuKeyDown}
           >
-            <div className="px-4 py-2 border-b border-[#e6e6e6]">
+            <div className="px-4 py-2">
               <div className="font-medium text-black truncate">
                 {user.displayName || 'Anonymous User'}
               </div>
@@ -299,14 +298,6 @@ export function AuthButton() {
               onClick={() => setIsDropdownOpen(false)}
             >
               Profile
-            </Link>
-            
-            <Link 
-              href="/create"
-              className="dropdown-item"
-              onClick={() => setIsDropdownOpen(false)}
-            >
-              Create Post
             </Link>
             
             <button

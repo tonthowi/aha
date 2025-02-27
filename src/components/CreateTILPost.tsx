@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Post } from '@/lib/contexts/PostsContext';
 import { uploadFile } from '@/lib/firebase/firebaseUtils';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { CategoryPill } from '@/components/ui/CategoryPill';
 
 // Dynamically import RichTextEditor with SSR disabled
 const RichTextEditor = dynamic(() => import('./RichTextEditor').then(mod => mod.RichTextEditor), {
@@ -165,18 +166,17 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
           Categories
         </label>
         <div className="flex flex-wrap gap-2">
-          {(showAllCategories ? categories : categories.slice(0, 6)).map((category) => (
+          {(showAllCategories ? categories : categories.slice(0, 6)).map((cat) => (
             <button
-              key={category}
+              key={cat}
               type="button"
-              onClick={() => toggleCategory(category)}
-              className={`${
-                selectedCategories.includes(category)
-                  ? 'bg-black text-white'
-                  : 'bg-[#f7f7f7] text-[#666666] hover:bg-[#e6e6e6]'
-              } px-3 py-1 rounded-full text-sm font-medium transition-colors`}
+              onClick={() => toggleCategory(cat)}
+              className="flex-shrink-0"
             >
-              {category}
+              <CategoryPill 
+                category={cat} 
+                className={selectedCategories.includes(cat) ? "!bg-black !text-white" : ""}
+              />
             </button>
           ))}
           {categories.length > 6 && (

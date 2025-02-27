@@ -10,6 +10,7 @@ import { usePosts } from "@/lib/contexts/PostsContext";
 import { useEffect, useState } from "react";
 import { getAvatarUrl, formatTimestamp } from "@/lib/utils";
 import { Post } from "@/lib/contexts/PostsContext";
+import { CategoryPill } from '@/components/ui/CategoryPill';
 
 export default function PostPage() {
   const router = useRouter();
@@ -134,7 +135,7 @@ export default function PostPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b">
+      <header className="sticky top-0 z-10 bg-white backdrop-blur-sm border-b border-black">
         <div className="max-w-2xl mx-auto px-4 py-3">
           <div className="flex items-center gap-4">
             <button
@@ -175,12 +176,7 @@ export default function PostPage() {
         <article>
           {/* Category */}
           <div className="mb-4">
-            <span 
-              className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
-              role="status"
-            >
-              {post.category}
-            </span>
+            <CategoryPill category={post.category} />
           </div>
 
           {/* Post content */}

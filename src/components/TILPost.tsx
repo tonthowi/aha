@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { getAvatarUrl, formatTimestamp } from '@/lib/utils';
 import { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { CategoryPill } from '@/components/ui/CategoryPill';
 
 interface MediaAttachment {
   type: 'image' | 'video' | 'audio' | 'file';
@@ -199,12 +200,10 @@ export const TILPost: React.FC<TILPostProps> = ({
 
         <div className="flex flex-wrap gap-2">
           {formatCategories(post.category).map((category, index) => (
-            <span 
+            <CategoryPill 
               key={index}
-              className="badge"
-            >
-              {category}
-            </span>
+              category={category}
+            />
           ))}
         </div>
 

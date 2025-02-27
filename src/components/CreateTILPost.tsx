@@ -3,6 +3,8 @@ import { PhotoIcon, VideoCameraIcon, MusicalNoteIcon, PaperClipIcon, LockClosedI
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { Post } from '@/lib/contexts/PostsContext';
+import { uploadFile } from '@/lib/firebase/firebaseUtils';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 // Dynamically import RichTextEditor with SSR disabled
 const RichTextEditor = dynamic(() => import('./RichTextEditor').then(mod => mod.RichTextEditor), {
@@ -28,6 +30,7 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
   const [isPrivate, setIsPrivate] = useState(false);
   const [media, setMedia] = useState<MediaAttachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
 
   const categories = [
     '💻 Programming',
@@ -68,21 +71,54 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
 
   const isValid = hasMinimumWords(content) && selectedCategories.length > 0;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
 
-    onSubmit({ 
-      content, 
-      category: selectedCategories.join(', '),
-      isPrivate, 
-      media 
-    });
-    
-    setContent('');
-    setSelectedCategories([]);
-    setIsPrivate(false);
-    setMedia([]);
+    try {
+      // Upload media files to Firebase Storage if they are blob URLs
+      const processedMedia = await Promise.all(
+        media.map(async (item) => {
+          // If the URL is a blob URL, we need to upload it to Firebase Storage
+          if (item.url.startsWith('blob:')) {
+            // Convert blob URL back to a file
+            const response = await fetch(item.url);
+            const blob = await response.blob();
+            const file = new File([blob], item.filename, { type: item.mimeType });
+            
+            // Upload to Firebase Storage with user ID in metadata
+            const storagePath = `posts/media/${Date.now()}_${item.filename}`;
+            const metadata = { userId: user?.uid || 'anonymous' };
+            const permanentUrl = await uploadFile(file, storagePath, metadata);
+            
+            return {
+              ...item,
+              url: permanentUrl
+            };
+          }
+          
+          // If it's not a blob URL, return as is
+          return item;
+        })
+      );
+
+      // Submit the post with processed media
+      onSubmit({ 
+        content, 
+        category: selectedCategories.join(', '),
+        isPrivate, 
+        media: processedMedia 
+      });
+      
+      // Clear form
+      setContent('');
+      setSelectedCategories([]);
+      setIsPrivate(false);
+      setMedia([]);
+    } catch (error) {
+      console.error('Error uploading media:', error);
+      alert('Failed to upload media. Please try again.');
+    }
   };
 
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>, type: MediaAttachment['type']) => {
@@ -177,6 +213,11 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
                     alt={item.filename}
                     fill
                     className="object-cover"
+                    unoptimized={true}
+                    onError={(e) => {
+                      const imgElement = e.target as HTMLImageElement;
+                      imgElement.src = "/images/placeholder.svg";
+                    }}
                   />
                 </div>
               )}

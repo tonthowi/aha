@@ -1,21 +1,62 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { uploadFile } from '@/lib/firebase/firebaseUtils';
 
 interface PostComposerProps {
-  onPost: (content: string, attachments: File[]) => void;
+  onPost: (content: string, media: Array<{
+    type: 'image' | 'video' | 'audio' | 'file';
+    url: string;
+    filename: string;
+    mimeType: string;
+  }>) => void;
 }
 
 export function PostComposer({ onPost }: PostComposerProps) {
   const { user } = useAuth();
   const [content, setContent] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handlePost = () => {
-    if (!content.trim() && attachments.length === 0) return;
-    onPost(content, attachments);
-    setContent('');
-    setAttachments([]);
+  const handlePost = async () => {
+    if ((!content.trim() && attachments.length === 0) || isSubmitting) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Upload attachments to Firebase Storage
+      const uploadedMedia = await Promise.all(
+        attachments.map(async (file) => {
+          const storagePath = `posts/media/${Date.now()}_${file.name}`;
+          const metadata = { userId: user?.uid || 'anonymous' };
+          const url = await uploadFile(file, storagePath, metadata);
+          
+          let mediaType: 'image' | 'video' | 'audio' | 'file' = 'file';
+          if (file.type.startsWith('image/')) mediaType = 'image';
+          else if (file.type.startsWith('video/')) mediaType = 'video';
+          else if (file.type.startsWith('audio/')) mediaType = 'audio';
+          
+          return {
+            type: mediaType,
+            url,
+            filename: file.name,
+            mimeType: file.type
+          };
+        })
+      );
+      
+      // Submit post with uploaded media
+      onPost(content, uploadedMedia);
+      
+      // Reset form
+      setContent('');
+      setAttachments([]);
+    } catch (error) {
+      console.error('Error uploading attachments:', error);
+      alert('Failed to upload attachments. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,6 +96,11 @@ export function PostComposer({ onPost }: PostComposerProps) {
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover rounded-xl"
+                      unoptimized={true}
+                      onError={(e) => {
+                        const imgElement = e.target as HTMLImageElement;
+                        imgElement.src = "/images/placeholder.svg";
+                      }}
                     />
                   )}
                 </div>

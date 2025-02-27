@@ -288,9 +288,9 @@ export const getUserBookmarks = async (userId: string): Promise<string[]> => {
 };
 
 // Storage functions
-export const uploadFile = async (file: File, path: string) => {
+export const uploadFile = async (file: File, path: string, metadata?: Record<string, any>) => {
   const storageRef = ref(storage, path);
-  await uploadBytes(storageRef, file);
+  await uploadBytes(storageRef, file, { customMetadata: metadata });
   return getDownloadURL(storageRef);
 };
 

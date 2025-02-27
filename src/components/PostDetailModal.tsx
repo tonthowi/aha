@@ -149,6 +149,11 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                 fill
                                 sizes="(max-width: 768px) 100vw, 800px"
                                 className="object-contain bg-black"
+                                unoptimized={true}
+                                onError={(e) => {
+                                  const imgElement = e.target as HTMLImageElement;
+                                  imgElement.src = "/images/placeholder.svg";
+                                }}
                               />
                             </div>
                           )}

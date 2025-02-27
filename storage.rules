@@ -5,7 +5,15 @@ rules_version = '2';
 //    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
 service firebase.storage {
   match /b/{bucket}/o {
+    match /posts/media/{filename} {
+      // Allow authenticated users to read and write media files
+      allow read: if true;
+      allow write: if request.auth != null;
+      allow delete: if request.auth != null && request.auth.uid == resource.metadata.userId;
+    }
+    
     match /{allPaths=**} {
+      // Default rule - deny access
       allow read, write: if false;
     }
   }

@@ -4,11 +4,11 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { HeartIcon, ChatBubbleLeftIcon, BookmarkIcon, LockClosedIcon, GlobeAltIcon } from "@heroicons/react/24/outline";
+import { HeartIcon, ChatBubbleLeftIcon, BookmarkIcon } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon, BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid";
 import { usePosts } from "@/lib/contexts/PostsContext";
 import { useEffect, useState } from "react";
-import { getAvatarUrl } from "@/lib/utils";
+import { getAvatarUrl, formatTimestamp } from "@/lib/utils";
 import { Post } from "@/lib/contexts/PostsContext";
 
 export default function PostPage() {
@@ -88,19 +88,31 @@ export default function PostPage() {
         {post.media.map((item, index) => (
           <div key={index} className="relative">
             {item.type === "image" && (
-              <Image
-                src={item.url}
-                alt={item.filename}
-                width={800}
-                height={450}
-                className="rounded-2xl"
-              />
+              <div className="relative aspect-[16/9]">
+                <Image
+                  src={item.url}
+                  alt={item.filename || "Post image"}
+                  fill
+                  className="rounded-2xl object-cover"
+                  onError={(e) => {
+                    // Fallback for failed image loads
+                    const imgElement = e.target as HTMLImageElement;
+                    imgElement.src = "/images/placeholder.svg"; // Use SVG placeholder
+                    imgElement.classList.add("error");
+                  }}
+                  unoptimized={true}
+                  priority={index === 0}
+                />
+              </div>
             )}
             {item.type === "video" && (
               <video
                 src={item.url}
                 controls
-                className="w-full rounded-2xl"
+                className="w-full rounded-2xl aspect-[16/9] object-cover"
+                onError={(e) => {
+                  console.error("Error loading video:", e);
+                }}
               />
             )}
             {item.type === "audio" && (
@@ -108,6 +120,9 @@ export default function PostPage() {
                 src={item.url}
                 controls
                 className="w-full"
+                onError={(e) => {
+                  console.error("Error loading audio:", e);
+                }}
               />
             )}
           </div>
@@ -120,65 +135,52 @@ export default function PostPage() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-6">
-          <button
-            onClick={() => router.back()}
-            className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
-            aria-label="Go back"
-          >
-            <ArrowLeftIcon className="w-5 h-5" />
-          </button>
-          <h1 className="text-xl font-bold">Post</h1>
+        <div className="max-w-2xl mx-auto px-4 py-3">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.back()}
+              className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label="Go back"
+            >
+              <ArrowLeftIcon className="w-5 h-5" />
+            </button>
+            
+            <div className="relative h-10 w-10 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+              <Image
+                src={getAvatarUrl(post.author.name, post.author.avatar)}
+                alt={`${post.author.name}'s avatar`}
+                fill
+                className="object-cover"
+              />
+            </div>
+
+            <div className="flex-1">
+              <time 
+                className="text-sm text-gray-500 block"
+                dateTime={post.createdAt}
+                suppressHydrationWarning
+              >
+                {formatTimestamp(post.createdAt)}
+              </time>
+              <h1 className="text-lg font-semibold leading-tight">
+                {post.author.name} has Learned
+              </h1>
+            </div>
+          </div>
         </div>
       </header>
 
       {/* Main content */}
       <main className="max-w-2xl mx-auto px-4 py-6">
         <article>
-          {/* Author info */}
-          <div className="flex items-start gap-4 mb-6">
-            <div className="flex-shrink-0">
-              <div className="relative h-12 w-12 rounded-full overflow-hidden bg-gray-100">
-                <Image
-                  src={getAvatarUrl(post.author.name, post.author.avatar)}
-                  alt={`${post.author.name}'s avatar`}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 text-sm flex-wrap">
-                <span className="font-bold truncate">{post.author.name}</span>
-                <span className="text-gray-500" aria-hidden="true">·</span>
-                <time 
-                  className="text-gray-500"
-                  dateTime={post.createdAt}
-                  suppressHydrationWarning
-                >
-                  {new Date(post.createdAt).toLocaleDateString()}
-                </time>
-                <span className="text-gray-500" aria-hidden="true">·</span>
-                {post.isPrivate ? (
-                  <div className="flex items-center gap-1 text-yellow-600" role="status">
-                    <LockClosedIcon className="w-4 h-4" aria-hidden="true" />
-                    <span className="text-sm">Private</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1 text-green-600" role="status">
-                    <GlobeAltIcon className="w-4 h-4" aria-hidden="true" />
-                    <span className="text-sm">Public</span>
-                  </div>
-                )}
-              </div>
-              <span 
-                className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
-                role="status"
-              >
-                {post.category}
-              </span>
-            </div>
+          {/* Category */}
+          <div className="mb-4">
+            <span 
+              className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
+              role="status"
+            >
+              {post.category}
+            </span>
           </div>
 
           {/* Post content */}
@@ -190,8 +192,8 @@ export default function PostPage() {
             {renderMediaContent()}
           </div>
 
-          {/* Engagement stats */}
-          <div className="mt-8 py-4 border-y">
+          {/* Engagement toolbar */}
+          <div className="mt-8 py-4 bg-gray-50 rounded-xl px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-10">
                 <motion.button

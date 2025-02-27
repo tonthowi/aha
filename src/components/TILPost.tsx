@@ -4,7 +4,7 @@ import { HeartIcon, ChatBubbleLeftIcon, ArrowPathIcon, BookmarkIcon, LockClosedI
 import { HeartIcon as HeartSolidIcon, BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 import { PostDetailModal } from './PostDetailModal';
 import { useRouter } from 'next/navigation';
-import { getAvatarUrl } from '@/lib/utils';
+import { getAvatarUrl, formatTimestamp } from '@/lib/utils';
 import { useRef, useEffect, useState } from 'react';
 
 interface MediaAttachment {
@@ -107,6 +107,11 @@ export const TILPost: React.FC<TILPostProps> = ({
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="object-cover"
+                unoptimized={true}
+                onError={(e) => {
+                  const imgElement = e.target as HTMLImageElement;
+                  imgElement.src = "/images/placeholder.svg";
+                }}
               />
             )}
             {item.type === 'video' && (
@@ -186,7 +191,7 @@ export const TILPost: React.FC<TILPostProps> = ({
                 dateTime={post.createdAt}
                 suppressHydrationWarning
               >
-                {new Date(post.createdAt).toLocaleDateString()}
+                {formatTimestamp(post.createdAt)}
               </time>
             </div>
           </div>

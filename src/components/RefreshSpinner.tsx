@@ -25,7 +25,7 @@ export function RefreshSpinner({ progress, isRefreshing, className }: RefreshSpi
       transition={{ duration: 0.2 }}
     >
       <motion.div
-        className="rounded-full bg-white shadow-lg p-3"
+        className="rounded-full bg-white shadow-lg p-3 border border-[#e6e6e6]"
         animate={{
           rotate: isRefreshing ? 360 : progress * 360,
         }}
@@ -42,7 +42,7 @@ export function RefreshSpinner({ progress, isRefreshing, className }: RefreshSpi
               }
         }
       >
-        <ArrowPathIcon className="w-6 h-6 text-blue-500" />
+        <ArrowPathIcon className="w-6 h-6 text-black" />
       </motion.div>
     </motion.div>
   );

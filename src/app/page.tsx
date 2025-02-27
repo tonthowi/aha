@@ -20,57 +20,79 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <main className="max-w-4xl mx-auto px-4 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="relative w-16 h-16">
-            <Image
-              src="/TIL logo.svg"
-              alt="Today I Learned"
-              fill
-              className="object-contain"
-              priority
-            />
-          </div>
-          {user && (
-            <div className="flex items-center gap-4">
-              <AuthButton />
+    <div className="min-h-screen bg-white">
+      <header className="border-b border-black">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <div className="relative w-12 h-12">
+              <Image
+                src="/TIL logo.svg"
+                alt="TIL - Today I Learned"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
-          )}
+          </div>
+          <div className="flex items-center gap-4">
+            {user ? (
+              <AuthButton />
+            ) : (
+              <button
+                onClick={signInWithGoogle}
+                className="btn-primary"
+              >
+                Sign in
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-6 py-12 space-y-8">
+        <div className="max-w-2xl">
+          <h1 className="text-4xl font-bold tracking-tight mb-4">
+            Share what you learned today
+          </h1>
+          <p className="text-[#666666] text-lg mb-8">
+            Join our community of lifelong learners and share your daily discoveries.
+          </p>
         </div>
 
         <motion.button
           onClick={() => user ? setIsCreateModalOpen(true) : signInWithGoogle()}
-          className="w-full bg-white hover:shadow-md rounded-2xl p-4 flex items-center gap-4 border border-gray-200 hover:border-gray-300 transition-shadow"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          className="card-shadow-hover w-full p-6 flex items-center gap-4 cursor-pointer group"
+          whileHover={{ scale: 1.005 }}
+          whileTap={{ scale: 0.995 }}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           aria-label={user ? "Create new learning post" : "Sign in to create post"}
         >
           {user ? (
             <>
-              <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <svg className="w-6 h-6 text-gray-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center flex-shrink-0 group-hover:bg-[#ff90e8] transition-colors" aria-hidden="true">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </div>
-              <span className="text-gray-500 text-sm font-medium">Today I Learned...</span>
+              <span className="text-[#666666] text-lg font-medium group-hover:text-black transition-colors">Today I Learned...</span>
             </>
           ) : (
-            <div className="flex items-center justify-center w-full gap-2">
-              <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <div className="flex items-center justify-center w-full gap-3">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M23.766 12.277c0-.816-.067-1.636-.207-2.438H12.24v4.621h6.482c-.28 1.564-1.13 2.892-2.407 3.777v3.133h3.887c2.27-2.097 3.575-5.186 3.575-9.093z" fill="#4285F4"/>
                 <path d="M12.24 24c3.24 0 5.956-1.075 7.961-2.907l-3.887-3.133c-1.079.752-2.458 1.195-4.074 1.195-3.13 0-5.78-2.122-6.729-4.975h-4.02v3.233C3.534 21.27 7.565 24 12.24 24z" fill="#34A853"/>
                 <path d="M5.511 14.18c-.24-.72-.377-1.49-.377-2.28 0-.79.137-1.56.377-2.28V6.387h-4.02C.577 8.008 0 10.02 0 12.1c0 2.08.577 4.092 1.491 5.713l4.02-3.233z" fill="#FBBC05"/>
                 <path d="M12.24 4.844c1.763 0 3.347.607 4.595 1.794l3.45-3.45C18.205 1.19 15.489 0 12.24 0 7.565 0 3.534 2.73 1.491 6.387l4.02 3.233c.949-2.853 3.599-4.975 6.729-4.975z" fill="#EA4335"/>
               </svg>
-              <span className="text-gray-500 text-sm font-medium">Sign in to post your daily TILs</span>
+              <span className="text-lg font-medium">Sign in to share your learnings</span>
             </div>
           )}
         </motion.button>
 
-        <TILFeed />
+        <div className="pt-4">
+          <TILFeed />
+        </div>
 
         <CreatePostModal
           isOpen={isCreateModalOpen}

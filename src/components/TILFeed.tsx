@@ -93,16 +93,16 @@ export function TILFeed() {
   return (
     <div 
       ref={elementRef}
-      className="max-w-7xl mx-auto space-y-6 min-h-screen"
+      className="max-w-6xl mx-auto space-y-8"
     >
       <RefreshSpinner
         progress={pullProgress}
         isRefreshing={isRefreshing}
       />
 
-      <nav aria-label="Content filter" className="max-w-2xl mx-auto w-full">
+      <nav aria-label="Content filter" className="max-w-2xl mx-auto w-full px-4">
         <motion.div
-          className="bg-white rounded-2xl overflow-hidden shadow-sm"
+          className="card-shadow-hover overflow-hidden"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           style={{
@@ -110,10 +110,25 @@ export function TILFeed() {
           }}
         >
           <Tabs value={currentTab} className="w-full" onValueChange={setCurrentTab}>
-            <TabsList className="w-full grid grid-cols-3">
-              <TabsTrigger value="for-you">❤️ For You</TabsTrigger>
-              <TabsTrigger value="today-i-learned">💡 My TIL</TabsTrigger>
-              <TabsTrigger value="bookmarked">🔖 Saved</TabsTrigger>
+            <TabsList className="w-full grid grid-cols-3 p-1 bg-transparent">
+              <TabsTrigger 
+                value="for-you"
+                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-lg transition-colors"
+              >
+                💎 For You
+              </TabsTrigger>
+              <TabsTrigger 
+                value="today-i-learned"
+                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-lg transition-colors"
+              >
+                💡 Mine
+              </TabsTrigger>
+              <TabsTrigger 
+                value="bookmarked"
+                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-lg transition-colors"
+              >
+                🔖 Saved
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </motion.div>
@@ -122,7 +137,7 @@ export function TILFeed() {
       <ErrorBoundary>
         <motion.section 
           aria-label="Learning posts"
-          className="max-w-[1400px] mx-auto w-full"
+          className="max-w-[1400px] mx-auto w-full px-4"
           style={{
             transform: isPulling ? `translateY(${pullProgress * 50}px)` : undefined,
           }}
@@ -139,17 +154,17 @@ export function TILFeed() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="max-w-2xl mx-auto flex flex-col items-center justify-center py-12 px-4 bg-white rounded-2xl shadow-sm"
+              className="max-w-2xl mx-auto flex flex-col items-center justify-center py-12 px-6 card-shadow-hover"
             >
               <div className="text-center">
-                <h3 className="mt-2 text-lg font-medium text-gray-900">No posts yet</h3>
-                <p className="mt-1 text-sm text-gray-500">
+                <h3 className="mt-2 text-xl font-bold tracking-tight text-black">No posts yet</h3>
+                <p className="mt-3 text-[#666666]">
                   {getEmptyStateMessage()}
                 </p>
               </div>
             </motion.div>
           ) : (
-            <MasonryGrid className="w-full">
+            <MasonryGrid className="w-full gap-6">
               {filteredPosts.map((post) => (
                 <MasonryItem key={post.id}>
                   <TILPost

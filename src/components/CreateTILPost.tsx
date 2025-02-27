@@ -148,174 +148,161 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="min-h-[150px]">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div>
+        <label htmlFor="content" className="block text-sm font-medium text-black mb-2">
+          What did you learn today?
+        </label>
         <RichTextEditor
           content={content}
           onChange={setContent}
-          placeholder="What did you learn today?"
+          placeholder="Share your knowledge with the community..."
         />
       </div>
 
-      <div className="space-y-2">
+      <div>
+        <label className="block text-sm font-medium text-black mb-2">
+          Categories
+        </label>
         <div className="flex flex-wrap gap-2">
-          {categories.slice(0, showAllCategories ? undefined : 12).map((category) => (
+          {(showAllCategories ? categories : categories.slice(0, 6)).map((category) => (
             <button
               key={category}
               type="button"
               onClick={() => toggleCategory(category)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              className={`${
                 selectedCategories.includes(category)
-                  ? 'bg-gray-900 text-white hover:bg-gray-800'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                  ? 'bg-black text-white'
+                  : 'bg-[#f7f7f7] text-[#666666] hover:bg-[#e6e6e6]'
+              } px-3 py-1 rounded-full text-sm font-medium transition-colors`}
             >
               {category}
             </button>
           ))}
-          {!showAllCategories && categories.length > 12 && (
+          {categories.length > 6 && (
             <button
               type="button"
-              onClick={() => setShowAllCategories(true)}
-              className="px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200"
+              onClick={() => setShowAllCategories(!showAllCategories)}
+              className="text-sm text-[#666666] hover:text-black underline transition-colors"
             >
-              +{categories.length - 12}
+              {showAllCategories ? 'Show less' : 'Show more'}
             </button>
           )}
         </div>
-        {selectedCategories.length >= 5 && (
-          <p className="text-sm text-yellow-600">Maximum 5 categories allowed</p>
-        )}
       </div>
 
-      {/* Media Preview */}
+      <div>
+        <label className="block text-sm font-medium text-black mb-2">
+          Visibility
+        </label>
+        <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={() => setIsPrivate(false)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
+              !isPrivate
+                ? 'border-black bg-black text-white'
+                : 'border-[#e6e6e6] text-[#666666] hover:border-black hover:text-black'
+            } transition-colors`}
+          >
+            <GlobeAltIcon className="w-5 h-5" />
+            <span>Public</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsPrivate(true)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
+              isPrivate
+                ? 'border-black bg-black text-white'
+                : 'border-[#e6e6e6] text-[#666666] hover:border-black hover:text-black'
+            } transition-colors`}
+          >
+            <LockClosedIcon className="w-5 h-5" />
+            <span>Private</span>
+          </button>
+        </div>
+      </div>
+
       {media.length > 0 && (
-        <div className={`grid gap-2 mt-4 ${
-          media.length === 1 ? 'grid-cols-1' :
-          media.length === 2 ? 'grid-cols-2' :
-          media.length === 3 ? 'grid-cols-2' :
-          'grid-cols-2'
-        }`}>
-          {media.map((item, index) => (
-            <div 
-              key={index} 
-              className={`relative ${
-                media.length === 1 ? 'aspect-[16/9]' :
-                media.length === 2 ? 'aspect-square' :
-                index === 0 && media.length === 3 ? 'aspect-square col-span-2' :
-                'aspect-square'
-              }`}
-            >
-              {item.type === 'image' && (
-                <div className="relative h-full w-full rounded-2xl overflow-hidden">
-                  <Image
-                    src={item.url}
-                    alt={item.filename}
-                    fill
-                    className="object-cover"
-                    unoptimized={true}
-                    onError={(e) => {
-                      const imgElement = e.target as HTMLImageElement;
-                      imgElement.src = "/images/placeholder.svg";
-                    }}
-                  />
+        <div>
+          <label className="block text-sm font-medium text-black mb-2">
+            Attached Media
+          </label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {media.map((item, index) => (
+              <div key={index} className="relative group rounded-xl overflow-hidden border border-[#e6e6e6]">
+                {item.type === 'image' && (
+                  <div className="aspect-square relative">
+                    <Image
+                      src={item.url}
+                      alt={item.filename}
+                      fill
+                      className="object-cover"
+                      unoptimized={true}
+                    />
+                  </div>
+                )}
+                {item.type === 'video' && (
+                  <div className="aspect-square bg-[#f7f7f7] flex items-center justify-center">
+                    <VideoCameraIcon className="w-8 h-8 text-[#666666]" />
+                  </div>
+                )}
+                {item.type === 'audio' && (
+                  <div className="aspect-square bg-[#f7f7f7] flex items-center justify-center">
+                    <MusicalNoteIcon className="w-8 h-8 text-[#666666]" />
+                  </div>
+                )}
+                {item.type === 'file' && (
+                  <div className="aspect-square bg-[#f7f7f7] flex items-center justify-center">
+                    <PaperClipIcon className="w-8 h-8 text-[#666666]" />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeMedia(index)}
+                  className="absolute top-2 right-2 bg-black text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs truncate px-2 py-1">
+                  {item.filename}
                 </div>
-              )}
-              {item.type === 'video' && (
-                <video src={item.url} className="h-full w-full rounded-2xl object-cover" />
-              )}
-              {item.type === 'audio' && (
-                <div className="h-full w-full rounded-2xl bg-gray-100 flex items-center justify-center">
-                  <MusicalNoteIcon className="w-12 h-12 text-gray-400" />
-                </div>
-              )}
-              {item.type === 'file' && (
-                <div className="h-full w-full rounded-2xl bg-gray-100 flex items-center justify-center">
-                  <PaperClipIcon className="w-12 h-12 text-gray-400" />
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => removeMedia(index)}
-                className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1.5 hover:bg-black/70 transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          ))}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-4 border-t">
-        <div className="flex items-center space-x-4">
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            accept="image/*"
-            onChange={(e) => handleFileUpload(e, 'image')}
-            multiple
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors"
-          >
-            <PhotoIcon className="w-6 h-6" />
-          </button>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors"
-          >
-            <VideoCameraIcon className="w-6 h-6" />
-          </button>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors"
-          >
-            <MusicalNoteIcon className="w-6 h-6" />
-          </button>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors"
-          >
-            <PaperClipIcon className="w-6 h-6" />
-          </button>
-        </div>
+      <div className="flex flex-wrap gap-4">
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          onChange={(e) => handleFileUpload(e, 'image')}
+          accept="image/*"
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="btn-outline flex items-center gap-2"
+        >
+          <PhotoIcon className="w-5 h-5" />
+          <span>Add Image</span>
+        </button>
+      </div>
 
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => setIsPrivate(!isPrivate)}
-            className={`p-2 rounded-full transition-colors ${
-              isPrivate 
-                ? 'text-yellow-500 bg-yellow-50 hover:bg-yellow-100' 
-                : 'text-green-500 bg-green-50 hover:bg-green-100'
-            }`}
-          >
-            {isPrivate ? (
-              <LockClosedIcon className="w-6 h-6" />
-            ) : (
-              <GlobeAltIcon className="w-6 h-6" />
-            )}
-          </button>
-          <button
-            type="submit"
-            disabled={!isValid}
-            className={`px-4 py-2 rounded-full font-medium transition-colors ${
-              isValid
-                ? 'bg-blue-500 text-white hover:bg-blue-600'
-                : 'bg-blue-200 text-white cursor-not-allowed'
-            }`}
-          >
-            Post
-          </button>
-        </div>
+      <div className="flex justify-end pt-4 border-t border-[#e6e6e6]">
+        <button
+          type="submit"
+          disabled={!hasMinimumWords(content)}
+          className={`btn-primary ${
+            !hasMinimumWords(content) ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          Share Learning
+        </button>
       </div>
     </form>
   );

@@ -6,6 +6,7 @@ import { PostDetailModal } from './PostDetailModal';
 import { useRouter } from 'next/navigation';
 import { getAvatarUrl, formatTimestamp } from '@/lib/utils';
 import { useRef, useEffect, useState } from 'react';
+import Link from 'next/link';
 
 interface MediaAttachment {
   type: 'image' | 'video' | 'audio' | 'file';
@@ -79,7 +80,7 @@ export const TILPost: React.FC<TILPostProps> = ({
 
     return (
       <div
-        className={`grid gap-0.5 mt-3 mb-2 cursor-pointer rounded-2xl overflow-hidden ${
+        className={`grid mt-3 mb-2 cursor-pointer ${
           thumbnailCount === 1 ? 'grid-cols-1' :
           thumbnailCount === 2 ? 'grid-cols-2' :
           'grid-cols-2'
@@ -98,7 +99,7 @@ export const TILPost: React.FC<TILPostProps> = ({
               index === 0 ? 'aspect-square' : 'aspect-square'
             } ${
               thumbnailCount > 2 && index === 0 ? 'col-span-2' : ''
-            }`}
+            } overflow-hidden`}
           >
             {item.type === 'image' && (
               <Image
@@ -157,8 +158,7 @@ export const TILPost: React.FC<TILPostProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      whileHover={{ scale: 1.02 }}
-      className="p-6 cursor-pointer bg-white shadow-sm hover:shadow-md transition-colors rounded-2xl relative"
+      whileHover={{ scale: 1.005 }}
       onClick={() => router.push(`/post/${post.id}`)}
       tabIndex={0}
       role="button"
@@ -174,7 +174,7 @@ export const TILPost: React.FC<TILPostProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
-              <div className="relative h-10 w-10 rounded-full overflow-hidden bg-gray-100">
+              <div className="relative">
                 <Image
                   src={getAvatarUrl(post.author.name, post.author.avatar)}
                   alt={`${post.author.name}'s avatar`}
@@ -185,9 +185,9 @@ export const TILPost: React.FC<TILPostProps> = ({
             </div>
             
             <div className="flex flex-col min-w-0">
-              <span className="font-bold text-sm truncate">{post.author.name}</span>
+              <span className="font-semibold pb-1 text-black truncate">{post.author.name}</span>
               <time 
-                className="text-sm text-gray-500"
+                className="text-xs text-gray-500"
                 dateTime={post.createdAt}
                 suppressHydrationWarning
               >
@@ -201,7 +201,7 @@ export const TILPost: React.FC<TILPostProps> = ({
           {formatCategories(post.category).map((category, index) => (
             <span 
               key={index}
-              className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700"
+              className="badge"
             >
               {category}
             </span>
@@ -211,7 +211,7 @@ export const TILPost: React.FC<TILPostProps> = ({
         <div className="mt-1">
           <div 
             ref={contentRef}
-            className={`prose prose-sm text-gray-800 relative ${
+            className={`prose prose-sm text-black relative ${
               isContentTruncated ? 'max-h-[20rem] overflow-hidden' : ''
             }`}
           >
@@ -229,7 +229,7 @@ export const TILPost: React.FC<TILPostProps> = ({
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-4 py-1 text-sm font-medium text-blue-600 hover:text-blue-700 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:shadow-md transition-all"
+                    className="px-4 py-1 text-sm font-medium text-black border border-[#e6e6e6] hover:border-black rounded-full transition-all card-shadow-hover"
                   >
                     Read More →
                   </motion.button>
@@ -241,68 +241,49 @@ export const TILPost: React.FC<TILPostProps> = ({
           {renderMediaThumbnails()}
         </div>
 
-        <div className="flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-10">
+        <div className="flex items-center justify-between mt-2" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-6">
             <motion.button
               onClick={onLike}
               whileTap={{ scale: 0.9 }}
-              className="group flex items-center gap-2 text-gray-500"
+              className="group flex items-center gap-2 text-[#666666] hover:text-black transition-colors"
               aria-label={`${isLiked ? 'Unlike' : 'Like'} post (${post.likes + (isLiked ? 1 : 0)} likes)`}
-              aria-pressed={isLiked}
             >
-              <motion.div 
-                className="p-2 -m-2 group-hover:bg-red-50 rounded-full transition-colors"
-                animate={isLiked ? { scale: [1, 1.2, 1] } : {}}
-              >
-                {isLiked ? (
-                  <HeartSolidIcon className="w-5 h-5 text-red-500" aria-hidden="true" />
-                ) : (
-                  <HeartIcon className="w-5 h-5 group-hover:text-red-500" aria-hidden="true" />
-                )}
-              </motion.div>
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={post.likes + (isLiked ? 1 : 0)}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className={`text-sm ${isLiked ? 'text-red-500' : 'group-hover:text-red-500'}`}
-                >
-                  {post.likes + (isLiked ? 1 : 0)}
-                </motion.span>
-              </AnimatePresence>
+              {isLiked ? (
+                <HeartSolidIcon className="w-5 h-5 text-[#ff90e8]" />
+              ) : (
+                <HeartIcon className="w-5 h-5 group-hover:text-black transition-colors" />
+              )}
+              <span className="text-sm font-medium">
+                {post.likes + (isLiked ? 1 : 0)}
+              </span>
             </motion.button>
 
-            <motion.button 
+            <motion.button
+              onClick={onBookmark}
               whileTap={{ scale: 0.9 }}
-              className="group flex items-center gap-2 text-gray-500"
-              aria-label={`${post.comments} comments`}
-            >
-              <div className="p-2 -m-2 group-hover:bg-blue-50 rounded-full transition-colors">
-                <ChatBubbleLeftIcon className="w-5 h-5 group-hover:text-blue-500" aria-hidden="true" />
-              </div>
-              <span className="text-sm group-hover:text-blue-500">{post.comments}</span>
-            </motion.button>
-          </div>
-
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={onBookmark}
-            className="group p-2 -m-2 text-gray-500"
-            aria-label={`${isBookmarked ? 'Remove bookmark' : 'Bookmark'} post`}
-            aria-pressed={isBookmarked}
-          >
-            <motion.div 
-              className="group-hover:bg-yellow-50 rounded-full p-2 -m-2 transition-colors"
-              animate={isBookmarked ? { scale: [1, 1.2, 1] } : {}}
+              className="group flex items-center gap-2 text-[#666666] hover:text-black transition-colors"
+              aria-label={`${isBookmarked ? 'Remove from' : 'Add to'} bookmarks (${post.bookmarks + (isBookmarked ? 1 : 0)} bookmarks)`}
             >
               {isBookmarked ? (
-                <BookmarkSolidIcon className="w-5 h-5 text-yellow-500" aria-hidden="true" />
+                <BookmarkSolidIcon className="w-5 h-5 text-[#ff90e8]" />
               ) : (
-                <BookmarkIcon className="w-5 h-5 group-hover:text-yellow-500" aria-hidden="true" />
+                <BookmarkIcon className="w-5 h-5 group-hover:text-black transition-colors" />
               )}
-            </motion.div>
-          </motion.button>
+              <span className="text-sm font-medium">
+                {post.bookmarks + (isBookmarked ? 1 : 0)}
+              </span>
+            </motion.button>
+
+            <Link
+              href={`/post/${post.id}`}
+              className="group flex items-center gap-2 text-[#666666] hover:text-black transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ChatBubbleLeftIcon className="w-5 h-5 group-hover:text-black transition-colors" />
+              <span className="text-sm font-medium">{post.comments}</span>
+            </Link>
+          </div>
         </div>
       </div>
     </motion.article>

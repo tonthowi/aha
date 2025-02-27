@@ -155,16 +155,16 @@ export default function PostPage() {
             </div>
 
             <div className="flex-1">
+              <h1 className="text-lg font-semibold pb-1">
+                {post.author.name}
+              </h1>
               <time 
-                className="text-sm text-gray-500 block"
+                className="text-xs text-gray-500 block"
                 dateTime={post.createdAt}
                 suppressHydrationWarning
               >
                 {formatTimestamp(post.createdAt)}
               </time>
-              <h1 className="text-lg font-semibold leading-tight">
-                {post.author.name} has Learned
-              </h1>
             </div>
           </div>
         </div>

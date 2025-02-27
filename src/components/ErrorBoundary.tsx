@@ -32,18 +32,18 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return this.props.fallback || (
-        <div className="min-h-[200px] flex items-center justify-center p-6 bg-white rounded-2xl shadow-sm">
+        <div className="min-h-[200px] flex items-center justify-center p-6 card-shadow-hover">
           <div className="text-center">
-            <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-yellow-400" />
-            <h3 className="mt-2 text-lg font-medium text-gray-900">Something went wrong</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-black" />
+            <h3 className="mt-2 text-lg font-medium text-black">Something went wrong</h3>
+            <p className="mt-1 text-sm text-[#666666]">
               {this.state.error?.message || 'An unexpected error occurred'}
             </p>
             <div className="mt-6">
               <button
                 type="button"
                 onClick={this.handleRetry}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="btn-primary"
               >
                 Try again
               </button>

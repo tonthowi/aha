@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 
 export function TILPostSkeleton() {
   return (
-    <div className="p-6 bg-white rounded-2xl">
+    <div className="p-6 card-shadow-hover">
       {/* Author section */}
       <div className="flex gap-4">
         <div className="flex-shrink-0">

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useDeepgram } from '../lib/contexts/DeepgramContext';
-import { addDocument } from '../lib/firebase/firebaseUtils';
 import { motion } from 'framer-motion';
+import { MicrophoneIcon, StopIcon } from '@heroicons/react/24/outline';
 
 export default function VoiceRecorder() {
   const [isRecording, setIsRecording] = useState(false);
@@ -18,12 +18,9 @@ export default function VoiceRecorder() {
     disconnectFromDeepgram();
     setIsRecording(false);
     
-    // Save the note to Firebase
+    // Log the transcript instead of saving to Firebase
     if (realtimeTranscript) {
-      await addDocument('notes', {
-        text: realtimeTranscript,
-        timestamp: new Date().toISOString(),
-      });
+      console.log('Transcript:', realtimeTranscript);
     }
   };
 
@@ -31,14 +28,26 @@ export default function VoiceRecorder() {
     <div className="w-full max-w-md">
       <button
         onClick={isRecording ? handleStopRecording : handleStartRecording}
-        className={`w-full py-2 px-4 rounded-full ${
-          isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'
-        } text-white font-bold`}
+        className={`w-full py-2 px-4 rounded-lg flex items-center justify-center gap-2 ${
+          isRecording 
+            ? 'bg-black text-white hover:bg-black/90' 
+            : 'bg-white text-black border border-[#e6e6e6] hover:bg-[#f7f7f7]'
+        } font-medium transition-colors card-shadow-hover`}
       >
-        {isRecording ? 'Stop Recording' : 'Start Recording'}
+        {isRecording ? (
+          <>
+            <StopIcon className="w-5 h-5" />
+            <span>Stop Recording</span>
+          </>
+        ) : (
+          <>
+            <MicrophoneIcon className="w-5 h-5" />
+            <span>Start Recording</span>
+          </>
+        )}
       </button>
       {isRecording && (
-        <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+        <div className="mt-4 p-4 bg-white rounded-xl card-shadow-hover">
           <motion.div
             animate={{
               scale: [1, 1.2, 1],
@@ -48,9 +57,9 @@ export default function VoiceRecorder() {
               repeat: Infinity,
               ease: "easeInOut",
             }}
-            className="w-8 h-8 bg-blue-500 rounded-full mx-auto mb-4"
+            className="w-8 h-8 bg-black rounded-full mx-auto mb-4"
           />
-          <p className="text-sm text-gray-600">{realtimeTranscript}</p>
+          <p className="text-sm text-[#666666]">{realtimeTranscript || "Listening..."}</p>
         </div>
       )}
     </div>

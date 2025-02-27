@@ -6,7 +6,11 @@ import { PostsProvider } from '@/lib/contexts/PostsContext';
 // Import debug utilities to ensure they're available globally
 import '@/lib/utils/debugUtils';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Today I Learned',
@@ -67,14 +71,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <head>
         <DebugScript />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.className} antialiased`}>
         <AuthProvider>
           <PostsProvider>
-            <div className="min-h-screen bg-gray-50">
+            <div className="min-h-screen bg-white">
               {children}
             </div>
           </PostsProvider>

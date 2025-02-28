@@ -78,7 +78,7 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased`}>
         <AuthProvider>
           <PostsProvider>
-            <div className="min-h-screen bg-white">
+            <div className="min-h-screen">
               {children}
             </div>
           </PostsProvider>

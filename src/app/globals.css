@@ -150,6 +150,17 @@ a:hover {
   transform: translate(-2px, -2px);
 }
 
+.bookmark-shadow-hover {
+  transition: all 0.2s;
+  box-shadow: 0 0 0 0 rgba(0,0,0,0);
+  transform: translate(0, 0);
+}
+.bookmark-shadow-hover:hover {
+  border-radius: 10rem;
+  box-shadow: 5px 5px 0px 0px rgba(0,0,0,1);
+  transform: translate(-2px, -2px);
+}
+
 .input {
   width: 100%;
   padding: 0.5rem 1rem;

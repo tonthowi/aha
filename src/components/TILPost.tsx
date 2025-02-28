@@ -1,13 +1,14 @@
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HeartIcon, ChatBubbleLeftIcon, ArrowPathIcon, BookmarkIcon, LockClosedIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
-import { HeartIcon as HeartSolidIcon, BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
+import { HeartIcon, ChatBubbleLeftIcon, ArrowPathIcon, LockClosedIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import { PostDetailModal } from './PostDetailModal';
 import { useRouter } from 'next/navigation';
 import { getAvatarUrl, formatTimestamp } from '@/lib/utils';
 import { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CategoryPill } from '@/components/ui/CategoryPill';
+import { EngagementBar } from '@/components/ui/EngagementBar';
 
 interface MediaAttachment {
   type: 'image' | 'video' | 'audio' | 'file';
@@ -163,6 +164,7 @@ export const TILPost: React.FC<TILPostProps> = ({
       onClick={() => router.push(`/post/${post.id}`)}
       tabIndex={0}
       role="button"
+      className="overflow-visible"
       aria-label={`View details of post: ${post.id}`}
       onKeyDown={(e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -171,7 +173,7 @@ export const TILPost: React.FC<TILPostProps> = ({
         }
       }}
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 overflow-visible">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
@@ -240,49 +242,15 @@ export const TILPost: React.FC<TILPostProps> = ({
           {renderMediaThumbnails()}
         </div>
 
-        <div className="flex items-center justify-between mt-2" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-6">
-            <motion.button
-              onClick={onLike}
-              whileTap={{ scale: 0.9 }}
-              className="group flex items-center gap-2 text-[#666666] hover:text-black transition-colors"
-              aria-label={`${isLiked ? 'Unlike' : 'Like'} post (${post.likes + (isLiked ? 1 : 0)} likes)`}
-            >
-              {isLiked ? (
-                <HeartSolidIcon className="w-5 h-5 text-[#ff90e8]" />
-              ) : (
-                <HeartIcon className="w-5 h-5 group-hover:text-black transition-colors" />
-              )}
-              <span className="text-sm font-medium">
-                {post.likes + (isLiked ? 1 : 0)}
-              </span>
-            </motion.button>
-
-            <motion.button
-              onClick={onBookmark}
-              whileTap={{ scale: 0.9 }}
-              className="group flex items-center gap-2 text-[#666666] hover:text-black transition-colors"
-              aria-label={`${isBookmarked ? 'Remove from' : 'Add to'} bookmarks (${post.bookmarks + (isBookmarked ? 1 : 0)} bookmarks)`}
-            >
-              {isBookmarked ? (
-                <BookmarkSolidIcon className="w-5 h-5 text-[#ff90e8]" />
-              ) : (
-                <BookmarkIcon className="w-5 h-5 group-hover:text-black transition-colors" />
-              )}
-              <span className="text-sm font-medium">
-                {post.bookmarks + (isBookmarked ? 1 : 0)}
-              </span>
-            </motion.button>
-
-            <Link
-              href={`/post/${post.id}`}
-              className="group flex items-center gap-2 text-[#666666] hover:text-black transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ChatBubbleLeftIcon className="w-5 h-5 group-hover:text-black transition-colors" />
-              <span className="text-sm font-medium">{post.comments}</span>
-            </Link>
-          </div>
+        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+          <EngagementBar
+            likes={post.likes}
+            comments={post.comments}
+            isLiked={isLiked}
+            isBookmarked={isBookmarked}
+            onLike={onLike}
+            onBookmark={onBookmark}
+          />
         </div>
       </div>
     </motion.article>

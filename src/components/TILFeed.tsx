@@ -11,6 +11,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MasonryGridSkeleton } from "@/components/skeletons/MasonryGridSkeleton";
 import { usePullToRefresh } from "@/lib/hooks/usePullToRefresh";
 import { RefreshSpinner } from "@/components/RefreshSpinner";
+import { SparklesIcon, UserIcon, BookmarkIcon } from "@heroicons/react/24/outline";
 
 export function TILFeed() {
   const { user } = useAuth();
@@ -113,21 +114,24 @@ export function TILFeed() {
             <TabsList className="w-full grid grid-cols-3 p-1 bg-transparent">
               <TabsTrigger 
                 value="for-you"
-                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-xl transition-colors"
+                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-xl transition-colors flex items-center gap-2"
               >
-                💎 For You
+                <SparklesIcon className="w-5 h-5" />
+                For You
               </TabsTrigger>
               <TabsTrigger 
                 value="today-i-learned"
-                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-xl transition-colors"
+                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-xl transition-colors flex items-center gap-2"
               >
-                💡 Mine
+                <UserIcon className="w-5 h-5" />
+                Mine
               </TabsTrigger>
               <TabsTrigger 
                 value="bookmarked"
-                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-xl transition-colors"
+                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-xl transition-colors flex items-center gap-2"
               >
-                🔖 Saved
+                <BookmarkIcon className="w-5 h-5" />
+                Save Bucket
               </TabsTrigger>
             </TabsList>
           </Tabs>

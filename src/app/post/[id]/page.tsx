@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { getAvatarUrl, formatTimestamp } from "@/lib/utils";
 import { Post } from "@/lib/contexts/PostsContext";
 import { CategoryPill } from '@/components/ui/CategoryPill';
+import { EngagementBar } from '@/components/ui/EngagementBar';
 
 export default function PostPage() {
   const router = useRouter();
@@ -133,7 +134,7 @@ export default function PostPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white backdrop-blur-sm border-b border-black">
         <div className="max-w-2xl mx-auto px-4 py-3">
@@ -173,7 +174,7 @@ export default function PostPage() {
 
       {/* Main content */}
       <main className="max-w-2xl mx-auto px-4 py-6">
-        <article>
+        <article className="bg-white rounded-xl p-6">
           {/* Category */}
           <div className="mb-4">
             <CategoryPill category={post.category} />
@@ -189,69 +190,15 @@ export default function PostPage() {
           </div>
 
           {/* Engagement toolbar */}
-          <div className="mt-8 py-4 bg-gray-50 rounded-xl px-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-10">
-                <motion.button
-                  onClick={() => toggleLike(postId)}
-                  whileTap={{ scale: 0.9 }}
-                  className="group flex items-center gap-2 text-gray-500"
-                  aria-label={`${isLiked ? "Unlike" : "Like"} post (${post.likes + (isLiked ? 1 : 0)} likes)`}
-                  aria-pressed={isLiked}
-                >
-                  <motion.div 
-                    className="p-2 -m-2 group-hover:bg-red-50 rounded-full transition-colors"
-                    animate={isLiked ? { scale: [1, 1.2, 1] } : {}}
-                  >
-                    {isLiked ? (
-                      <HeartSolidIcon className="w-6 h-6 text-red-500" aria-hidden="true" />
-                    ) : (
-                      <HeartIcon className="w-6 h-6 group-hover:text-red-500" aria-hidden="true" />
-                    )}
-                  </motion.div>
-                  <motion.span
-                    key={post.likes + (isLiked ? 1 : 0)}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className={`text-sm ${isLiked ? "text-red-500" : "group-hover:text-red-500"}`}
-                  >
-                    {post.likes + (isLiked ? 1 : 0)}
-                  </motion.span>
-                </motion.button>
-
-                <motion.button 
-                  whileTap={{ scale: 0.9 }}
-                  className="group flex items-center gap-2 text-gray-500"
-                  aria-label={`${post.comments} comments`}
-                >
-                  <div className="p-2 -m-2 group-hover:bg-blue-50 rounded-full transition-colors">
-                    <ChatBubbleLeftIcon className="w-6 h-6 group-hover:text-blue-500" aria-hidden="true" />
-                  </div>
-                  <span className="text-sm group-hover:text-blue-500">{post.comments}</span>
-                </motion.button>
-              </div>
-
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => toggleBookmark(postId)}
-                className="group p-2 -m-2 text-gray-500"
-                aria-label={`${isBookmarked ? "Remove bookmark" : "Bookmark"} post`}
-                aria-pressed={isBookmarked}
-              >
-                <motion.div 
-                  className="group-hover:bg-yellow-50 rounded-full p-2 -m-2 transition-colors"
-                  animate={isBookmarked ? { scale: [1, 1.2, 1] } : {}}
-                >
-                  {isBookmarked ? (
-                    <BookmarkSolidIcon className="w-6 h-6 text-yellow-500" aria-hidden="true" />
-                  ) : (
-                    <BookmarkIcon className="w-6 h-6 group-hover:text-yellow-500" aria-hidden="true" />
-                  )}
-                </motion.div>
-              </motion.button>
-            </div>
-          </div>
+          <EngagementBar
+            className="mt-8"
+            likes={post.likes}
+            comments={post.comments}
+            isLiked={isLiked}
+            isBookmarked={isBookmarked}
+            onLike={() => toggleLike(postId)}
+            onBookmark={() => toggleBookmark(postId)}
+          />
         </article>
       </main>
     </div>

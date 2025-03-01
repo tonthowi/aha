@@ -22,12 +22,11 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       <header>
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <div className="relative w-24 h-24
-            ">
+            <div className="relative w-40 h-28">
               <Image
-                src="/TIL-logo-text.svg"
+                src="/TIL-logo-revamped.svg"
                 alt="TIL - Today I Learned"
                 fill
                 className="object-contain"

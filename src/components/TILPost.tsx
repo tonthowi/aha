@@ -9,6 +9,7 @@ import { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CategoryPill } from '@/components/ui/CategoryPill';
 import { EngagementBar } from '@/components/ui/EngagementBar';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 interface MediaAttachment {
   type: 'image' | 'video' | 'audio' | 'file';
@@ -53,6 +54,9 @@ export const TILPost: React.FC<TILPostProps> = ({
   const router = useRouter();
   const contentRef = useRef<HTMLDivElement>(null);
   const [isContentTruncated, setIsContentTruncated] = useState(false);
+  const { user } = useAuth();
+
+  const isOwnPost = Boolean(user && (post.author.name === user.displayName || post.author.name === "Anonymous User"));
 
   useEffect(() => {
     const checkContentHeight = () => {
@@ -248,6 +252,7 @@ export const TILPost: React.FC<TILPostProps> = ({
             comments={post.comments}
             isLiked={isLiked}
             isBookmarked={isBookmarked}
+            isOwnPost={isOwnPost}
             onLike={onLike}
             onBookmark={onBookmark}
           />

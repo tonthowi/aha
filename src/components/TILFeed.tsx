@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TILPost } from "@/components/TILPost";
@@ -67,7 +68,7 @@ export function TILFeed() {
       case "today-i-learned":
         return "You haven't shared any learnings yet. Start sharing what you've learned!";
       case "bookmarked":
-        return "No bookmarked posts yet. When you find interesting learnings from others, bookmark them to save for later!";
+        return "Your bucket is empty. Why don't you find some interesting learnings from others, TIL! it up!";
       default:
         return "No posts to display in this section yet.";
     }
@@ -161,7 +162,15 @@ export function TILFeed() {
               className="max-w-2xl mx-auto flex flex-col items-center justify-center py-12 px-6 card-shadow-hover"
             >
               <div className="text-center">
-                <h3 className="mt-2 text-xl font-bold tracking-tight text-black">No posts yet</h3>
+              <div className="relative w-40 h-40 mx-auto">
+              <Image
+                src="/empty-bucket.svg"
+                alt="Empty State icon"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
                 <p className="mt-3 text-[#666666]">
                   {getEmptyStateMessage()}
                 </p>

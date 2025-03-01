@@ -12,12 +12,14 @@ import { getAvatarUrl, formatTimestamp } from "@/lib/utils";
 import { Post } from "@/lib/contexts/PostsContext";
 import { CategoryPill } from '@/components/ui/CategoryPill';
 import { EngagementBar } from '@/components/ui/EngagementBar';
+import { useAuth } from "@/lib/hooks/useAuth";
 
 export default function PostPage() {
   const router = useRouter();
   const params = useParams();
   const postId = params.id as string;
   const { getPost, likedPosts, bookmarkedPosts, toggleLike, toggleBookmark } = usePosts();
+  const { user } = useAuth();
   
   const [post, setPost] = useState<Post | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,6 +83,7 @@ export default function PostPage() {
 
   const isLiked = likedPosts.has(postId);
   const isBookmarked = bookmarkedPosts.has(postId);
+  const isOwnPost = Boolean(user && post && (post.author.name === user.displayName || post.author.name === "Anonymous User"));
 
   const renderMediaContent = () => {
     if (!post.media || post.media.length === 0) return null;
@@ -196,6 +199,7 @@ export default function PostPage() {
             comments={post.comments}
             isLiked={isLiked}
             isBookmarked={isBookmarked}
+            isOwnPost={isOwnPost}
             onLike={() => toggleLike(postId)}
             onBookmark={() => toggleBookmark(postId)}
           />

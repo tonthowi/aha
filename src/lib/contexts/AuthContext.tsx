@@ -111,13 +111,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Check if we have a pending sign-in attempt
         const hasSignInAttempt = sessionStorage.getItem('signInAttempt') === 'true';
         const signInTimestamp = sessionStorage.getItem('signInTimestamp');
+        const authComplete = sessionStorage.getItem('authComplete') === 'true';
         
         logger.info('Processing redirect result', {
           hasSignInAttempt,
           signInTimestamp,
+          authComplete,
           currentUser: auth.currentUser?.email || null,
           currentTime: new Date().toISOString()
         });
+
+        // If we have a completed auth flow from the callback page
+        if (authComplete) {
+          logger.debug('Auth complete flag found, clearing session storage');
+          sessionStorage.removeItem('authComplete');
+          
+          // If we have a user, we're good
+          if (auth.currentUser) {
+            logger.info('User already authenticated after redirect', {
+              email: auth.currentUser.email,
+              uid: auth.currentUser.uid
+            });
+            setUser(auth.currentUser);
+            resetRedirectCount();
+            clearAuthSessionStorage();
+            setLoading(false);
+            setIsCheckingRedirect(false);
+            return;
+          }
+        }
 
         // If we don't have a sign-in attempt, we're not in a redirect flow
         if (!hasSignInAttempt) {
@@ -270,16 +292,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         access_type: 'offline'
       });
       
-      // Ensure a clean state before starting
-      await auth.signOut();
-
+      // Set auth persistence to local to maintain the session
+      await setPersistence(auth, browserLocalPersistence);
+      
       // Check if we're on localhost
       const isLocalhost = window.location.hostname === 'localhost' || 
                          window.location.hostname === '127.0.0.1';
       
-      if (isLocalhost) {
+      // For localhost, try popup first
+      if (isLocalhost && supportsPopups()) {
         try {
-          logger.info('Attempting popup sign-in');
+          logger.info('Attempting popup sign-in on localhost');
           const result = await signInWithPopup(auth, provider);
           
           if (result?.user) {
@@ -294,26 +317,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (popupError: any) {
           logger.warn('Popup sign-in error:', popupError);
           
-          // Only fall back to redirect if popup is blocked by browser
-          if (popupError.code === 'auth/popup-blocked') {
-            logger.info('Popup was blocked by browser, falling back to redirect');
+          // Fall back to redirect if popup fails
+          if (popupError.code === 'auth/popup-blocked' || 
+              popupError.code === 'auth/cancelled-popup-request' ||
+              popupError.code === 'auth/popup-closed-by-user') {
+            logger.info('Popup was blocked or closed, falling back to redirect');
             // Continue to redirect flow
           } else {
-            // For popup closed or cancelled, just clear loading state and return
-            logger.info('Popup was closed or cancelled by user');
+            // For other errors, throw
             setLoading(false);
-            return;
+            throw popupError;
           }
         }
       }
       
-      // If we reach here, either:
-      // 1. We're not on localhost
-      // 2. Popup was blocked and we're falling back
+      // For production or if popup failed, use redirect
       logger.info('Using redirect sign-in');
+      
+      // Store that we're attempting a sign-in
       sessionStorage.setItem('signInAttempt', 'true');
       sessionStorage.setItem('signInTimestamp', Date.now().toString());
+      
+      // Use redirect sign-in
       await signInWithRedirect(auth, provider);
+      
+      // Note: The code execution won't reach here in the redirect flow
+      // as the page will be redirected to Google
       
     } catch (error: any) {
       logger.error('Error in Google sign-in:', error);

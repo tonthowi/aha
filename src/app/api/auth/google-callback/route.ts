@@ -1,36 +1,43 @@
 import { NextResponse } from "next/server";
-import { signInWithCredential, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "@/lib/firebase/firebase";
 
 export async function GET(request: Request) {
   try {
-    // Get the URL and parse the code parameter
+    // Get the URL and parse the state parameter
     const url = new URL(request.url);
-    const code = url.searchParams.get("code");
+    const state = url.searchParams.get("state");
+    const error = url.searchParams.get("error");
     
-    // Create HTML for the callback response
+    // Handle errors from Google
+    if (error) {
+      console.error("Google auth error:", error);
+      return NextResponse.redirect(new URL('/?auth_error=' + error, request.url));
+    }
+    
+    // Create HTML for the callback response that will redirect to the home page
+    // This is important because Firebase handles the token exchange automatically
     const responseHtml = `
       <!DOCTYPE html>
       <html>
       <head>
         <title>Authentication Complete</title>
         <script>
-          // Send a message to the parent window
-          window.onload = function() {
-            if (window.opener) {
-              window.opener.postMessage({ type: 'AUTH_COMPLETE' }, window.location.origin);
-              window.close();
-            } else {
-              // If no opener, redirect back to the main page
-              window.location.href = '/';
-            }
-          };
+          // Store that we've completed the auth flow
+          try {
+            sessionStorage.setItem('authComplete', 'true');
+            sessionStorage.removeItem('signInAttempt');
+            sessionStorage.removeItem('signInTimestamp');
+          } catch (e) {
+            console.error('Error updating session storage:', e);
+          }
+          
+          // Redirect back to the main page
+          window.location.href = '/';
         </script>
       </head>
       <body>
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: system-ui, sans-serif;">
           <h2>Authentication Complete</h2>
-          <p>You may close this window.</p>
           <p>Redirecting you back to the application...</p>
         </div>
       </body>
@@ -47,25 +54,37 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Error in Google callback:", error);
     
-    // Return error HTML
+    // Return error HTML that redirects to home with error
     const errorHtml = `
       <!DOCTYPE html>
       <html>
       <head>
         <title>Authentication Error</title>
+        <script>
+          // Clear auth attempt
+          try {
+            sessionStorage.removeItem('signInAttempt');
+            sessionStorage.removeItem('signInTimestamp');
+            sessionStorage.setItem('authError', 'true');
+          } catch (e) {
+            console.error('Error updating session storage:', e);
+          }
+          
+          // Redirect to home with error
+          window.location.href = '/?auth_error=callback_error';
+        </script>
       </head>
       <body>
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: system-ui, sans-serif;">
           <h2>Authentication Error</h2>
-          <p>There was an error during authentication. Please try again.</p>
-          <button onclick="window.close()">Close Window</button>
+          <p>There was an error during authentication. Redirecting you back to try again...</p>
         </div>
       </body>
       </html>
     `;
     
     return new NextResponse(errorHtml, {
-      status: 500,
+      status: 200, // Use 200 to ensure the redirect script runs
       headers: {
         "Content-Type": "text/html",
       },

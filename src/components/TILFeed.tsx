@@ -68,11 +68,23 @@ export function TILFeed() {
   const getEmptyStateMessage = () => {
     switch (currentTab) {
       case "today-i-learned":
-        return "You haven't shared any learnings yet. Start sharing what you've learned!";
+        return "Your brain is empty. Learn something new!";
       case "bookmarked":
-        return "Your bucket is empty. Why don't you find some interesting learnings from others, TIL! it up!";
+        return "Why don't you find something interesting from others, TIL it up!";
       default:
-        return "No posts to display in this section yet.";
+        return "People are fucking dumb!";
+    }
+  };
+
+  // Get empty state image based on current tab
+  const getEmptyStateImage = () => {
+    switch (currentTab) {
+      case "today-i-learned":
+        return "/you-learned-nothing.svg";
+      case "bookmarked":
+        return "/empty-bucket.svg";
+      default:
+        return "/you-learned-nothing.svg";
     }
   };
 
@@ -178,16 +190,16 @@ export function TILFeed() {
               className="max-w-2xl mx-auto flex flex-col items-center justify-center py-12 px-6 card-shadow-hover"
             >
               <div className="text-center">
-              <div className="relative w-40 h-40 mx-auto">
-              <Image
-                src="/empty-bucket.svg"
-                alt="Empty State icon"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-                <p className="mt-3 text-[#666666]">
+                <div className="relative w-40 h-40 mx-auto">
+                  <Image
+                    src={getEmptyStateImage()}
+                    alt="Empty State icon"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+                <p className="mt-3 text-black">
                   {getEmptyStateMessage()}
                 </p>
               </div>

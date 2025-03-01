@@ -1,8 +1,9 @@
 import { Dialog } from '@headlessui/react';
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CreateTILPost } from './CreateTILPost';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 
 interface MediaAttachment {
   type: 'image' | 'video' | 'audio' | 'file';
@@ -26,10 +27,38 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (post: any) => {
+    console.log('CreatePostModal: Received post data from CreateTILPost', post);
+    try {
+      setIsSubmitting(true);
+      await onSubmit(post);
+      console.log('CreatePostModal: onSubmit callback executed successfully');
+      // Only close the modal after successful submission
+      onClose();
+      console.log('CreatePostModal: Modal closed');
+    } catch (error) {
+      console.error('CreatePostModal: Error in submission process', error);
+      toast.error('Failed to create post. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!isSubmitting) {
+      console.log('CreatePostModal: Closing modal');
+      onClose();
+    } else {
+      console.log('CreatePostModal: Cannot close while submitting');
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <Dialog as="div" className="relative z-10" onClose={onClose} open={isOpen}>
+        <Dialog as="div" className="relative z-10" onClose={handleClose} open={isOpen}>
           <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" aria-hidden="true" />
           
           <div className="fixed inset-0 overflow-y-auto">
@@ -48,18 +77,16 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                       Share your learning
                     </Dialog.Title>
                     <button 
-                      onClick={onClose}
-                      className="rounded-full p-1 hover:bg-[#f7f7f7] transition-colors"
+                      onClick={handleClose}
+                      disabled={isSubmitting}
+                      className={`rounded-full p-1 hover:bg-[#f7f7f7] transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <XMarkIcon className="w-5 h-5" />
                     </button>
                   </div>
                   <div className="modal-body">
                     <CreateTILPost
-                      onSubmit={(post) => {
-                        onSubmit(post);
-                        onClose();
-                      }}
+                      onSubmit={handleSubmit}
                     />
                   </div>
                 </Dialog.Panel>

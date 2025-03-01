@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/contexts/AuthContext';
 import { PostsProvider } from '@/lib/contexts/PostsContext';
+import { Toaster } from 'react-hot-toast';
 // Import debug utilities to ensure they're available globally
 import '@/lib/utils/debugUtils';
 
@@ -81,6 +82,18 @@ export default function RootLayout({
             <div className="min-h-screen">
               {children}
             </div>
+            <Toaster 
+              position="bottom-center"
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: '#333',
+                  color: '#fff',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                }
+              }}
+            />
           </PostsProvider>
         </AuthProvider>
       </body>

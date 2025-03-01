@@ -28,6 +28,7 @@ interface MediaAttachment {
 interface Author {
   name: string;
   avatar?: string;
+  id?: string;
 }
 
 export interface Post {
@@ -40,6 +41,7 @@ export interface Post {
   likes: number;
   comments: number;
   bookmarks: number;
+  authorId?: string;
 }
 
 // Initial posts data
@@ -107,6 +109,7 @@ function convertFirebasePostToUIPost(postRecord: PostRecord): Post {
     author: {
       name: postRecord.authorName,
       avatar: postRecord.authorPhotoURL,
+      id: postRecord.authorId,
     },
     category: postRecord.category,
     createdAt: postRecord.createdAt,
@@ -114,6 +117,7 @@ function convertFirebasePostToUIPost(postRecord: PostRecord): Post {
     likes: postRecord.likeCount,
     comments: postRecord.commentCount,
     bookmarks: postRecord.bookmarkCount,
+    authorId: postRecord.authorId,
   };
 }
 

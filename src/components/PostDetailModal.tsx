@@ -16,6 +16,7 @@ interface MediaAttachment {
 interface Author {
   name: string;
   avatar: string;
+  id?: string;
 }
 
 interface Post {
@@ -29,6 +30,7 @@ interface Post {
   likes: number;
   comments: number;
   bookmarks: number;
+  authorId?: string;
 }
 
 interface PostDetailModalProps {

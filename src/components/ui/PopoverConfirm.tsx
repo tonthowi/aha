@@ -67,7 +67,7 @@ export const PopoverConfirm: React.FC<PopoverConfirmProps> = ({
           className={`absolute z-50 ${getPositionClasses()} min-w-[200px]`}
           onKeyDown={handleKeyDown}
         >
-          <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+          <div className="card-shadow-hover rounded-lg overflow-hidden z-50">
             <div className="p-3">
               <p className="text-sm text-gray-700">{message}</p>
             </div>

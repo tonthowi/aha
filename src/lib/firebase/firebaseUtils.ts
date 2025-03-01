@@ -23,6 +23,7 @@ import {
   DocumentData,
   QuerySnapshot,
   serverTimestamp,
+  getFirestore,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { 
@@ -90,24 +91,37 @@ export const updateUserProfile = async (uid: string, data: Partial<Omit<UserReco
 };
 
 // Post management
-export const createPost = async (postData: Omit<PostRecord, 'id' | 'likeCount' | 'commentCount' | 'bookmarkCount' | 'createdAt' | 'updatedAt'>) => {
+export const createPost = async (postData: any): Promise<string> => {
+  console.log('firebaseUtils: createPost called with data', postData);
   try {
+    const db = getFirestore();
+    const postsCollection = collection(db, 'posts');
+    
+    // Use ISO string for timestamp instead of serverTimestamp
     const timestamp = new Date().toISOString();
-    const newPost = {
+    
+    // Add timestamp
+    const postWithTimestamp = {
       ...postData,
+      createdAt: timestamp,
+      updatedAt: timestamp,
       likeCount: 0,
       commentCount: 0,
       bookmarkCount: 0,
-      createdAt: timestamp,
-      updatedAt: timestamp,
     };
     
-    const docRef = await addDoc(collection(db, "posts"), newPost);
+    console.log('firebaseUtils: Prepared post data with timestamp', postWithTimestamp);
+    
+    // Add document to Firestore
+    const docRef = await addDoc(postsCollection, postWithTimestamp);
+    console.log('firebaseUtils: Post created successfully with ID', docRef.id);
+    
+    // Update the document with its ID
     await updateDoc(docRef, { id: docRef.id });
     
     return docRef.id;
   } catch (error) {
-    console.error("Error creating post:", error);
+    console.error('firebaseUtils: Error creating post:', error);
     throw error;
   }
 };
@@ -150,7 +164,17 @@ export const getPosts = async (options?: {
 export const getPostById = async (postId: string): Promise<PostRecord | null> => {
   try {
     const postDoc = await getDoc(doc(db, "posts", postId));
-    return postDoc.exists() ? postDoc.data() as PostRecord : null;
+    if (!postDoc.exists()) {
+      return null;
+    }
+    
+    // Ensure the document has an id field that matches its document ID
+    const data = postDoc.data() as PostRecord;
+    if (!data.id) {
+      data.id = postDoc.id;
+    }
+    
+    return data;
   } catch (error) {
     console.error("Error fetching post by ID:", error);
     throw error;
@@ -323,7 +347,14 @@ export const subscribeToPostUpdates = (callback: (posts: PostRecord[]) => void, 
   const q = query(collection(db, "posts"), ...constraints);
   
   return onSnapshot(q, (snapshot) => {
-    const posts = snapshot.docs.map(doc => doc.data() as PostRecord);
+    const posts = snapshot.docs.map(doc => {
+      // Ensure the document has an id field that matches its document ID
+      const data = doc.data() as PostRecord;
+      if (!data.id) {
+        data.id = doc.id;
+      }
+      return data;
+    });
     callback(posts);
   });
 };

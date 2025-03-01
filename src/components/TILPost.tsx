@@ -22,6 +22,7 @@ interface MediaAttachment {
 interface Author {
   name: string;
   avatar?: string;
+  id?: string;
 }
 
 interface Post {
@@ -34,6 +35,7 @@ interface Post {
   likes: number;
   comments: number;
   bookmarks: number;
+  authorId?: string;
 }
 
 interface TILPostProps {
@@ -62,7 +64,14 @@ export const TILPost: React.FC<TILPostProps> = ({
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
   const { user } = useAuth();
 
-  const isOwnPost = Boolean(user && (post.author.name === user.displayName || post.author.name === "Anonymous User"));
+  const isOwnPost = Boolean(
+    user && (
+      (post.authorId && post.authorId === user.uid) ||
+      (post.author.id && post.author.id === user.uid) ||
+      post.author.name === user.displayName || 
+      post.author.name === "Anonymous User"
+    )
+  );
 
   useEffect(() => {
     const checkContentHeight = () => {
@@ -92,7 +101,7 @@ export const TILPost: React.FC<TILPostProps> = ({
 
     return (
       <div
-        className={`grid mt-3 mb-2 cursor-pointer ${
+        className={`grid mt-3 mb-2 cursor-pointer overflow-visible ${
           thumbnailCount === 1 ? 'grid-cols-1' :
           thumbnailCount === 2 ? 'grid-cols-2' :
           'grid-cols-2'
@@ -229,7 +238,7 @@ export const TILPost: React.FC<TILPostProps> = ({
               </div>
             </div>
 
-            {isOwnPost && (
+            {/* {isOwnPost && (
               <div className="flex items-center gap-2 relative" onClick={(e) => e.stopPropagation()}>
                 <button
                   onClick={handleEditClick}
@@ -257,7 +266,7 @@ export const TILPost: React.FC<TILPostProps> = ({
                   position="bottom"
                 />
               </div>
-            )}
+            )} */}
           </div>
 
           <div className="flex flex-wrap gap-2">

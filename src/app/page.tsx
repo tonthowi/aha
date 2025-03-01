@@ -8,15 +8,40 @@ import { TILFeed } from "@/components/TILFeed";
 import { usePosts } from "@/lib/contexts/PostsContext";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { AuthButton } from "@/components/AuthButton";
+import toast from "react-hot-toast";
 
 export default function Home() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
   const { addPost } = usePosts();
   const { user, signInWithGoogle } = useAuth();
 
   const handleCreatePost = async (postData: any) => {
-    await addPost(postData);
-    setIsCreateModalOpen(false);
+    console.log("Home: handleCreatePost called with data", postData);
+    try {
+      setIsCreatingPost(true);
+      console.log("Home: Attempting to add post");
+      const postId = await addPost(postData);
+      console.log("Home: Post added successfully with ID", postId);
+      setIsCreateModalOpen(false);
+      toast.success("Your learning has been shared!");
+      return postId; // Return the post ID so the modal knows the submission was successful
+    } catch (error) {
+      console.error("Home: Error adding post", error);
+      toast.error("Failed to share your learning. Please try again.");
+      throw error; // Re-throw the error so the modal can handle it
+    } finally {
+      setIsCreatingPost(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    if (!isCreatingPost) {
+      console.log("Home: Closing create post modal");
+      setIsCreateModalOpen(false);
+    } else {
+      console.log("Home: Cannot close modal while creating post");
+    }
   };
 
   return (
@@ -52,15 +77,19 @@ export default function Home() {
       <main className="max-w-6xl mx-auto px-6 py-12 space-y-8">
         <div className="max-w-2xl">
           <h1 className="text-4xl font-bold tracking-tight mb-4">
-            Share what you learned today
+          People sharing tidbits—brief facts you might find surprising or interesting.
           </h1>
-          <p className="text-[#666666] text-lg mb-8">
-            Join our community of lifelong learners and share your daily discoveries.
-          </p>
         </div>
 
         <motion.button
-          onClick={() => user ? setIsCreateModalOpen(true) : signInWithGoogle()}
+          onClick={() => {
+            console.log("Home: Create post button clicked, user:", user ? "logged in" : "not logged in");
+            if (user) {
+              setIsCreateModalOpen(true);
+            } else {
+              signInWithGoogle();
+            }
+          }}
           className="card-shadow-hover w-full p-6 flex items-center gap-4 cursor-pointer group"
           whileHover={{ scale: 1.005 }}
           whileTap={{ scale: 0.995 }}
@@ -96,7 +125,7 @@ export default function Home() {
 
         <CreatePostModal
           isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
+          onClose={handleCloseModal}
           onSubmit={handleCreatePost}
         />
       </main>

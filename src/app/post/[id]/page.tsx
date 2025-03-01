@@ -9,11 +9,23 @@ import { HeartIcon as HeartSolidIcon, BookmarkIcon as BookmarkSolidIcon } from "
 import { usePosts } from "@/lib/contexts/PostsContext";
 import { useEffect, useState, useRef } from "react";
 import { getAvatarUrl, formatTimestamp } from "@/lib/utils";
-import { Post } from "@/lib/contexts/PostsContext";
+import { Post as PostContextType } from "@/lib/contexts/PostsContext";
 import { CategoryPill } from '@/components/ui/CategoryPill';
 import { EngagementBar } from '@/components/ui/EngagementBar';
 import { useAuth } from "@/lib/hooks/useAuth";
 import { PopoverConfirm } from "@/components/ui/PopoverConfirm";
+
+// Extended interfaces for this component
+interface Author {
+  name: string;
+  avatar?: string;
+  id?: string; // Add id field
+}
+
+interface Post extends Omit<PostContextType, 'author'> {
+  author: Author;
+  authorId?: string; // Add authorId field
+}
 
 export default function PostPage() {
   const router = useRouter();
@@ -86,7 +98,19 @@ export default function PostPage() {
 
   const isLiked = likedPosts.has(postId);
   const isBookmarked = bookmarkedPosts.has(postId);
-  const isOwnPost = Boolean(user && post && (post.author.name === user.displayName || post.author.name === "Anonymous User"));
+  
+  // Updated ownership check that uses authorId if available, falling back to name comparison
+  const isOwnPost = Boolean(
+    user && post && (
+      // First check if post has authorId directly
+      (post.authorId && post.authorId === user.uid) ||
+      // Then check if author object has id
+      (post.author.id && post.author.id === user.uid) ||
+      // Fall back to name comparison for backward compatibility
+      post.author.name === user.displayName || 
+      post.author.name === "Anonymous User"
+    )
+  );
 
   const handleEditClick = () => {
     router.push(`/post/${postId}/edit`);

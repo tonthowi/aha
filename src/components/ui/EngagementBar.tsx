@@ -3,6 +3,8 @@ import Image from 'next/image';
 import { HeartIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import { useState } from 'react';
+import { useAuth } from '@/lib/hooks/useAuth';
+import toast from 'react-hot-toast';
 
 interface EngagementBarProps {
   likes: number;
@@ -26,8 +28,21 @@ export const EngagementBar: React.FC<EngagementBarProps> = ({
   className = '',
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const { user } = useAuth();
+
+  const handleLikeClick = () => {
+    if (!user) {
+      toast.error('Sign in to like');
+      return;
+    }
+    onLike();
+  };
 
   const handleBookmarkClick = () => {
+    if (!user) {
+      toast.error('Sign in to save to bucket');
+      return;
+    }
     setShowTooltip(false);
     onBookmark();
   };
@@ -37,7 +52,7 @@ export const EngagementBar: React.FC<EngagementBarProps> = ({
       <div className="flex items-center gap-6">
         {!isOwnPost && (
           <motion.button
-            onClick={onLike}
+            onClick={handleLikeClick}
             whileTap={{ scale: 1.5 }}
             className="group flex items-center gap-2 text-black hover:text-black transition-colors"
             aria-label={`${isLiked ? "Unlike" : "Like"} post (${likes + (isLiked ? 1 : 0)} likes)`}

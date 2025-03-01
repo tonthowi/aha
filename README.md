@@ -1,6 +1,6 @@
-# Aha! - Today I Learned
+# TIL! - Today I Learned
 
-A platform for capturing and sharing your daily learning moments and discoveries. Turn your "Aha!" moments into lasting knowledge.
+A platform for capturing and sharing your daily learning moments and discoveries. Turn your "TIL!" moments into lasting knowledge.
 
 ## Getting started
 To create a new project, you go to `/paths`, choose from our list of Paths, and then use Cursor's Composer feature to quickly scaffold your project!

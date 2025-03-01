@@ -6,6 +6,7 @@ import { Post } from '@/lib/contexts/PostsContext';
 import { uploadFile } from '@/lib/firebase/firebaseUtils';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { CategoryPill } from '@/components/ui/CategoryPill';
+import toast from 'react-hot-toast';
 
 // Dynamically import RichTextEditor with SSR disabled
 const RichTextEditor = dynamic(() => import('./RichTextEditor').then(mod => mod.RichTextEditor), {
@@ -29,6 +30,7 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [media, setMedia] = useState<MediaAttachment[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
 
@@ -73,28 +75,45 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isValid) return;
+    console.log('Form submitted', { content, selectedCategories, isValid });
+    
+    if (!isValid) {
+      console.log('Form validation failed');
+      toast.error('Please add content (at least 3 words) and select at least one category');
+      return;
+    }
 
     try {
+      console.log('Starting submission process');
+      setIsSubmitting(true);
+      
       // Upload media files to Firebase Storage if they are blob URLs
+      console.log('Processing media attachments', media);
       const processedMedia = await Promise.all(
         media.map(async (item) => {
           // If the URL is a blob URL, we need to upload it to Firebase Storage
           if (item.url.startsWith('blob:')) {
-            // Convert blob URL back to a file
-            const response = await fetch(item.url);
-            const blob = await response.blob();
-            const file = new File([blob], item.filename, { type: item.mimeType });
-            
-            // Upload to Firebase Storage with user ID in metadata
-            const storagePath = `posts/media/${Date.now()}_${item.filename}`;
-            const metadata = { userId: user?.uid || 'anonymous' };
-            const permanentUrl = await uploadFile(file, storagePath, metadata);
-            
-            return {
-              ...item,
-              url: permanentUrl
-            };
+            console.log('Uploading blob URL to Firebase Storage', item.filename);
+            try {
+              // Convert blob URL back to a file
+              const response = await fetch(item.url);
+              const blob = await response.blob();
+              const file = new File([blob], item.filename, { type: item.mimeType });
+              
+              // Upload to Firebase Storage with user ID in metadata
+              const storagePath = `posts/media/${Date.now()}_${item.filename}`;
+              const metadata = { userId: user?.uid || 'anonymous' };
+              const permanentUrl = await uploadFile(file, storagePath, metadata);
+              
+              console.log('Upload successful', permanentUrl);
+              return {
+                ...item,
+                url: permanentUrl
+              };
+            } catch (error) {
+              console.error('Error uploading file:', error);
+              throw error;
+            }
           }
           
           // If it's not a blob URL, return as is
@@ -102,21 +121,29 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
         })
       );
 
+      console.log('Media processed successfully', processedMedia);
+
       // Submit the post with processed media
-      onSubmit({ 
+      const postData = { 
         content, 
         category: selectedCategories.join(', '),
         isPrivate: false, 
         media: processedMedia 
-      });
+      };
+      
+      console.log('Submitting post data', postData);
+      onSubmit(postData);
       
       // Clear form
       setContent('');
       setSelectedCategories([]);
       setMedia([]);
+      toast.success('Post created successfully!');
     } catch (error) {
-      console.error('Error uploading media:', error);
-      alert('Failed to upload media. Please try again.');
+      console.error('Error during submission:', error);
+      toast.error('Failed to create post. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -147,7 +174,7 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-6">
       <div>
         <label htmlFor="content" className="block text-sm font-medium text-black mb-2">
           What did you learn today?
@@ -261,15 +288,28 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
 
       <div className="flex justify-end pt-4 border-t border-[#e6e6e6]">
         <button
-          type="submit"
-          disabled={!hasMinimumWords(content)}
+          type="button"
+          disabled={!isValid || isSubmitting}
           className={`btn-primary ${
-            !hasMinimumWords(content) ? 'opacity-50 cursor-not-allowed' : ''
+            !isValid || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
           }`}
+          onClick={(e) => {
+            console.log('Share Learning button clicked directly');
+            if (isValid && !isSubmitting) {
+              // Call handleSubmit directly with a synthetic event
+              const syntheticEvent = { preventDefault: () => {} } as React.FormEvent;
+              handleSubmit(syntheticEvent);
+            } else {
+              console.log('Button clicked but validation failed or already submitting', { isValid, isSubmitting });
+              if (!isValid) {
+                toast.error('Please add content (at least 3 words) and select at least one category');
+              }
+            }
+          }}
         >
-          Share Learning
+          {isSubmitting ? 'Sharing...' : 'Share Learning'}
         </button>
       </div>
-    </form>
+    </div>
   );
 }; 

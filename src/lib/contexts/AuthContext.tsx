@@ -172,6 +172,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             provider: result.user.providerData[0]?.providerId
           });
           
+          console.log('AUTH: Successfully processed redirect result');
+          // Add a flag to sessionStorage to indicate redirect auth was successful
+          sessionStorage.setItem('redirectAuthSuccess', 'true');
+          
           setUser(result.user);
           resetRedirectCount();
           clearAuthSessionStorage();
@@ -307,6 +311,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (usePopup) {
         logger.debug('Using popup for sign in');
+        console.log('AUTH: Using popup-based authentication');
         const result = await signInWithPopup(auth!, provider);
         
         if (result.user) {
@@ -321,6 +326,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         logger.debug('Using redirect for sign in');
+        console.log('AUTH: Using redirect-based authentication');
+        // Add a flag to sessionStorage to indicate redirect auth is being used
+        sessionStorage.setItem('usingRedirectAuth', 'true');
         await signInWithRedirect(auth!, provider);
         // Control flow will leave this function as the page redirects
       }

@@ -187,6 +187,10 @@ export const resetRedirectCount = (): void => {
 
 // Function to check if the browser supports popups
 export const supportsPopups = (): boolean => {
+  // Always return false to force redirect-based authentication
+  return false;
+  
+  /* Original implementation commented out
   if (!isBrowser) return false;
   
   try {
@@ -209,6 +213,7 @@ export const supportsPopups = (): boolean => {
     // Error handling without console logs
     return false;
   }
+  */
 };
 
 // Test helper functions with COOP-safe checks

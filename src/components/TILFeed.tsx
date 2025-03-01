@@ -10,8 +10,6 @@ import { usePosts } from "@/lib/contexts/PostsContext";
 import { MasonryGrid, MasonryItem } from "@/components/masonry";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MasonryGridSkeleton } from "@/components/skeletons/MasonryGridSkeleton";
-import { usePullToRefresh } from "@/lib/hooks/usePullToRefresh";
-import { RefreshSpinner } from "@/components/RefreshSpinner";
 import { SparklesIcon, UserIcon, BookmarkIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 
@@ -21,31 +19,6 @@ export function TILFeed() {
   const [currentTab, setCurrentTab] = useState("for-you");
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const router = useRouter();
-
-  // Implement real refresh function that uses Firebase
-  const handleRefresh = useCallback(async () => {
-    try {
-      setRefreshError(null);
-      
-      // The real-time listeners in the PostsContext will automatically 
-      // update when data changes in Firebase, so we don't need to manually 
-      // refresh. This is just a placeholder in case you want to add 
-      // additional refresh logic.
-      
-      // Simulate network delay for better UX feedback
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      
-      return true;
-    } catch (error) {
-      setRefreshError("Failed to refresh. Please try again.");
-      return false;
-    }
-  }, []);
-
-  const { elementRef, isPulling, isRefreshing, pullProgress } = usePullToRefresh({
-    onRefresh: handleRefresh,
-    pullDistance: 100,
-  });
 
   // Filter posts based on the current tab
   const filteredPosts = posts.filter((post) => {
@@ -118,20 +91,11 @@ export function TILFeed() {
 
   return (
     <div 
-      ref={elementRef}
       className="max-w-6xl mx-auto space-y-8"
     >
-      <RefreshSpinner
-        progress={pullProgress}
-        isRefreshing={isRefreshing}
-      />
-
-      <nav aria-label="Content filter" className="max-w-2xl mx-auto w-full px-4">
+      <nav aria-label="Content filter" className="max-w-2xl mx-auto w-full">
         <div
           className="card-shadow-hover overflow-hidden"
-          style={{
-            transform: isPulling ? `translateY(${pullProgress * 50}px)` : undefined,
-          }}
         >
           <Tabs value={currentTab} className="w-full" onValueChange={setCurrentTab}>
             <TabsList className="w-full grid grid-cols-3 p-1 bg-transparent">
@@ -164,10 +128,7 @@ export function TILFeed() {
       <ErrorBoundary>
         <section 
           aria-label="Learning posts"
-          className="max-w-[1400px] mx-auto w-full px-4"
-          style={{
-            transform: isPulling ? `translateY(${pullProgress * 50}px)` : undefined,
-          }}
+          className="max-w-[1400px] mx-auto w-full"
         >
           {refreshError && (
             <div className="p-4 mb-4 bg-red-50 text-red-600 rounded-lg text-center">

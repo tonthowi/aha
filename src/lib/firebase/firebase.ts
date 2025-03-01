@@ -17,15 +17,15 @@ const isFirebaseConfigValid =
   firebaseConfig.appId;
 
 // Debug log for Firebase config
-console.log('Firebase Config Status:', {
-  apiKey: firebaseConfig.apiKey ? 'DEFINED' : 'UNDEFINED',
-  authDomain: firebaseConfig.authDomain ? 'DEFINED' : 'UNDEFINED',
-  projectId: firebaseConfig.projectId ? 'DEFINED' : 'UNDEFINED',
-  storageBucket: firebaseConfig.storageBucket ? 'DEFINED' : 'UNDEFINED',
-  messagingSenderId: firebaseConfig.messagingSenderId ? 'DEFINED' : 'UNDEFINED',
-  appId: firebaseConfig.appId ? 'DEFINED' : 'UNDEFINED',
-  isValid: isFirebaseConfigValid
-});
+// console.log('Firebase Config Status:', {
+//   apiKey: firebaseConfig.apiKey ? 'DEFINED' : 'UNDEFINED',
+//   authDomain: firebaseConfig.authDomain ? 'DEFINED' : 'UNDEFINED',
+//   projectId: firebaseConfig.projectId ? 'DEFINED' : 'UNDEFINED',
+//   storageBucket: firebaseConfig.storageBucket ? 'DEFINED' : 'UNDEFINED',
+//   messagingSenderId: firebaseConfig.messagingSenderId ? 'DEFINED' : 'UNDEFINED',
+//   appId: firebaseConfig.appId ? 'DEFINED' : 'UNDEFINED',
+//   isValid: isFirebaseConfigValid
+// });
 
 // Initialize Firebase
 let app: FirebaseApp | undefined;

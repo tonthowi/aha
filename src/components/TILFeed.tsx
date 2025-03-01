@@ -91,33 +91,30 @@ export function TILFeed() {
 
   return (
     <div 
-      className="max-w-6xl mx-auto space-y-8"
+      className="max-w-6xl mx-auto space-y-4"
     >
       <nav aria-label="Content filter" className="max-w-2xl mx-auto w-full">
         <div
-          className="card-shadow-hover overflow-hidden"
+          className="overflow-hidden"
         >
           <Tabs value={currentTab} className="w-full" onValueChange={setCurrentTab}>
-            <TabsList className="w-full grid grid-cols-3 p-1 bg-transparent">
+            <TabsList className="w-full grid grid-cols-3">
               <TabsTrigger 
                 value="for-you"
-                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-xl transition-colors flex items-center gap-2"
+                className="data-[state=active]:bg-black data-[state=active]:text-white transition-colors flex items-center gap-2"
               >
-                <SparklesIcon className="w-5 h-5" />
                 For You
               </TabsTrigger>
               <TabsTrigger 
                 value="today-i-learned"
-                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-xl transition-colors flex items-center gap-2"
+                className="data-[state=active]:bg-black data-[state=active]:text-white transition-colors flex items-center gap-2"
               >
-                <UserIcon className="w-5 h-5" />
                 Mine
               </TabsTrigger>
               <TabsTrigger 
                 value="bookmarked"
-                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-xl transition-colors flex items-center gap-2"
+                className="data-[state=active]:bg-black data-[state=active]:text-white transition-colors flex items-center gap-2"
               >
-                <BookmarkIcon className="w-5 h-5" />
                 Save Bucket
               </TabsTrigger>
             </TabsList>

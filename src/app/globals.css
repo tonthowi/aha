@@ -19,11 +19,11 @@
   --gray-700: #444444;
   --gray-800: #222222;
   --gray-900: #000000;
+  --radius: 0.5rem;
 }
 
 body {
   color: #222222;
-  background: #F4F4F0;
   font-feature-settings: "ss01" on, "ss02" on, "ss03" on;
 }
 

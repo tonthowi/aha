@@ -12,7 +12,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      'relative inline-flex items-center justify-center rounded-xl bg-transparent border border-[#e6e6e6] p-1',
+      'relative inline-flex items-center justify-center',
       className
     )}
     aria-label="Content filter tabs"
@@ -29,7 +29,7 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      'relative inline-flex items-center justify-center whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium',
+      'relative inline-flex justify-center rounded-md px-4 py-2 text-sm font-medium',
       'text-black',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e6e6e6] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
       'data-[state=active]:bg-black data-[state=active]:text-white',

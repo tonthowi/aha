@@ -98,6 +98,13 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
         // Process each media item
         for (const item of media) {
           try {
+            if (!item.file) {
+              console.error("Media item missing file property:", item);
+              toast.error("Error processing media. Please try again.");
+              setIsSubmitting(false);
+              return;
+            }
+            
             // Upload to Firebase Storage and get permanent URL
             const permanentUrl = await uploadMediaToStorage(item.file, item.filename);
             
@@ -107,9 +114,9 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
               url: permanentUrl,
               filename: item.filename,
               mimeType: item.file?.type || '',
-              file: item.file
             });
           } catch (error) {
+            console.error("Failed to upload media:", error);
             // Handle upload error
             setSubmissionError("Failed to upload media. Please try again.");
             setIsSubmitting(false);
@@ -122,16 +129,17 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
       const postData = {
         content,
         category: selectedCategories.join(', '),
-        media: processedMedia,
+        media: processedMedia.length > 0 ? processedMedia : [],
       };
       
       // Submit post data
-      const postId = await onSubmit(postData);
+      await onSubmit(postData);
       
       // Reset form on success
       resetForm();
       
     } catch (error) {
+      console.error("Error sharing post:", error);
       setSubmissionError("Failed to share your learning. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -148,15 +156,18 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    // Create new media items with file references
     const newMedia = Array.from(files).map((file) => ({
       type,
       url: URL.createObjectURL(file),
       filename: file.name,
       mimeType: file.type,
-      file: file
+      file: file // Ensure the file is attached to the media item
     }));
 
     setMedia([...media, ...newMedia]);
+    
+    // Reset the file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -180,10 +191,15 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
   const uploadMediaToStorage = async (file: File | undefined, filename: string): Promise<string> => {
     // If we have a file, upload it to Firebase Storage
     if (file) {
-      // Upload to Firebase Storage with user ID in metadata
-      const storagePath = `posts/media/${Date.now()}_${filename}`;
-      const metadata = { userId: user?.uid || 'anonymous' };
-      return await uploadFile(file, storagePath, metadata);
+      try {
+        // Upload to Firebase Storage with user ID in metadata
+        const storagePath = `posts/media/${Date.now()}_${filename}`;
+        const metadata = { userId: user?.uid || 'anonymous' };
+        return await uploadFile(file, storagePath, metadata);
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        throw new Error("Failed to upload media file");
+      }
     }
     throw new Error("No file provided for upload");
   };

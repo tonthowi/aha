@@ -37,7 +37,6 @@ export function TILFeed() {
       
       return true;
     } catch (error) {
-      console.error("Error refreshing feed:", error);
       setRefreshError("Failed to refresh. Please try again.");
       return false;
     }
@@ -92,7 +91,6 @@ export function TILFeed() {
     try {
       await toggleLike(postId);
     } catch (error) {
-      console.error("Error liking post:", error);
       // Could show toast notification here
     }
   };
@@ -101,7 +99,6 @@ export function TILFeed() {
     try {
       await toggleBookmark(postId);
     } catch (error) {
-      console.error("Error bookmarking post:", error);
       // Could show toast notification here
     }
   };
@@ -115,7 +112,6 @@ export function TILFeed() {
       await deletePost(postId);
       // Could show success toast notification here
     } catch (error) {
-      console.error("Error deleting post:", error);
       // Could show error toast notification here
     }
   };
@@ -131,10 +127,8 @@ export function TILFeed() {
       />
 
       <nav aria-label="Content filter" className="max-w-2xl mx-auto w-full px-4">
-        <motion.div
+        <div
           className="card-shadow-hover overflow-hidden"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
           style={{
             transform: isPulling ? `translateY(${pullProgress * 50}px)` : undefined,
           }}
@@ -164,11 +158,11 @@ export function TILFeed() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-        </motion.div>
+        </div>
       </nav>
 
       <ErrorBoundary>
-        <motion.section 
+        <section 
           aria-label="Learning posts"
           className="max-w-[1400px] mx-auto w-full px-4"
           style={{
@@ -184,9 +178,7 @@ export function TILFeed() {
           {isLoading ? (
             <MasonryGridSkeleton itemCount={6} />
           ) : filteredPosts.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+            <div
               className="max-w-2xl mx-auto flex flex-col items-center justify-center py-12 px-6 card-shadow-hover"
             >
               <div className="text-center">
@@ -196,14 +188,14 @@ export function TILFeed() {
                     alt="Empty State icon"
                     fill
                     className="object-contain"
-                    priority
+                    sizes="(max-width: 768px) 100vw, 160px"
                   />
                 </div>
                 <p className="mt-3 text-black">
                   {getEmptyStateMessage()}
                 </p>
               </div>
-            </motion.div>
+            </div>
           ) : (
             <MasonryGrid className="w-full gap-6">
               {filteredPosts.map((post) => (
@@ -221,7 +213,7 @@ export function TILFeed() {
               ))}
             </MasonryGrid>
           )}
-        </motion.section>
+        </section>
       </ErrorBoundary>
     </div>
   );

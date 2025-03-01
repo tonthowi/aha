@@ -16,6 +16,7 @@ export function usePullToRefresh({
   const [isPulling, setIsPulling] = useState(false);
   const [pullProgress, setPullProgress] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshState, setRefreshState] = useState<'idle' | 'success' | 'error'>('idle');
 
   const handleTouchStart = useCallback(
     (e: TouchEvent) => {
@@ -67,15 +68,23 @@ export function usePullToRefresh({
       setIsPulling(false);
 
       try {
-        await onRefresh();
+        const success = await onRefresh();
+        if (success) {
+          setRefreshState('success');
+          setTimeout(() => {
+            setRefreshState('idle');
+          }, 1000);
+        } else {
+          setRefreshState('error');
+          setTimeout(() => {
+            setRefreshState('idle');
+          }, 1000);
+        }
       } catch (error) {
-        console.error('Error during refresh:', error);
-      } finally {
-        // Set a small delay before resetting for better UX
+        setRefreshState('error');
         setTimeout(() => {
-          setIsRefreshing(false);
-          setPullProgress(0);
-        }, 500);
+          setRefreshState('idle');
+        }, 1000);
       }
     } else {
       // Reset state if not pulled far enough
@@ -99,5 +108,5 @@ export function usePullToRefresh({
     };
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
-  return { elementRef, isPulling, pullProgress, isRefreshing };
+  return { elementRef, isPulling, pullProgress, isRefreshing, refreshState };
 } 

@@ -14,7 +14,6 @@ const safeSessionStorage = {
     try {
       return sessionStorage.getItem(key);
     } catch (e) {
-      console.error(`[Auth] Error accessing sessionStorage for key ${key}:`, e);
       return null;
     }
   },
@@ -23,7 +22,7 @@ const safeSessionStorage = {
     try {
       sessionStorage.setItem(key, value);
     } catch (e) {
-      console.error(`[Auth] Error setting sessionStorage for key ${key}:`, e);
+      // Error handling without console logs
     }
   },
   removeItem: (key: string): void => {
@@ -31,7 +30,7 @@ const safeSessionStorage = {
     try {
       sessionStorage.removeItem(key);
     } catch (e) {
-      console.error(`[Auth] Error removing sessionStorage for key ${key}:`, e);
+      // Error handling without console logs
     }
   },
   length: (): number => {
@@ -39,7 +38,6 @@ const safeSessionStorage = {
     try {
       return sessionStorage.length;
     } catch (e) {
-      console.error(`[Auth] Error accessing sessionStorage length:`, e);
       return 0;
     }
   },
@@ -48,7 +46,6 @@ const safeSessionStorage = {
     try {
       return sessionStorage.key(index);
     } catch (e) {
-      console.error(`[Auth] Error accessing sessionStorage key at index ${index}:`, e);
       return null;
     }
   }
@@ -62,7 +59,7 @@ const safeUpdateUrl = (callback: (url: URL) => void): void => {
     callback(url);
     window.history.replaceState({}, '', url.toString());
   } catch (e) {
-    console.error('[Auth] Error updating URL:', e);
+    // Error handling without console logs
   }
 };
 
@@ -104,8 +101,6 @@ export const clearAuthSessionStorage = () => {
       safeSessionStorage.removeItem(key);
     });
     
-    console.log('[Auth] Cleared auth session storage');
-    
     // Clear auth-related cookies
     if (document.cookie) {
       const cookies = document.cookie.split(';');
@@ -121,28 +116,15 @@ export const clearAuthSessionStorage = () => {
         document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
         document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
       });
-      
-      console.log('[Auth] Cleared auth cookies');
     }
   } catch (e) {
-    console.error('[Auth] Error in clearAuthSessionStorage:', e);
+    // Error handling without console logs
   }
 };
 
 // Function to log auth state for debugging
 export const logAuthState = (user: User | null, loading: boolean) => {
-  console.log('[Auth] Current state:', {
-    isAuthenticated: !!user,
-    loading,
-    user: user ? {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-      isAnonymous: user.isAnonymous,
-      emailVerified: user.emailVerified,
-      providerData: user.providerData,
-    } : null,
-  });
+  // Auth state logging removed for production
 };
 
 // Function to detect if we're in a redirect loop
@@ -171,8 +153,6 @@ export const detectAuthRedirectLoop = (): boolean => {
     
     // If we've redirected more than 2 times in a row within 30 seconds, we might be in a loop
     if (redirectCount >= 2) {
-      console.error('[Auth] Possible redirect loop detected!');
-      
       // Clear all auth-related storage to break the loop
       clearAuthSessionStorage();
       
@@ -201,7 +181,7 @@ export const resetRedirectCount = (): void => {
     safeSessionStorage.setItem('authRedirectCount', '0');
     safeSessionStorage.removeItem('lastRedirectTime');
   } catch (e) {
-    console.error('[Auth] Error in resetRedirectCount:', e);
+    // Error handling without console logs
   }
 };
 
@@ -226,7 +206,7 @@ export const supportsPopups = (): boolean => {
     // Modern browsers typically support popups
     return isChrome || isSafari || isFirefox;
   } catch (e) {
-    console.warn('[Auth] Error checking popup support:', e);
+    // Error handling without console logs
     return false;
   }
 };
@@ -251,63 +231,10 @@ export const monitorAuthState = () => {
     }
   });
 
-  console.group('🔍 Auth State Monitor');
-  console.log('Initial State:', getAuthState());
-
-  // Monitor session storage changes
-  const originalSetItem = sessionStorage.setItem.bind(sessionStorage);
-  sessionStorage.setItem = (key: string, value: string) => {
-    originalSetItem(key, value);
-    if (key.includes('auth') || key.includes('sign')) {
-      console.log('📝 Session Storage Updated:', { [key]: value });
-      console.log('Current State:', getAuthState());
-    }
-  };
-
-  // Monitor session storage removals
-  const originalRemoveItem = sessionStorage.removeItem.bind(sessionStorage);
-  sessionStorage.removeItem = (key: string) => {
-    originalRemoveItem(key);
-    if (key.includes('auth') || key.includes('sign')) {
-      console.log('🗑️ Session Storage Removed:', key);
-      console.log('Current State:', getAuthState());
-    }
-  };
-
-  console.log('🎯 Auth State Monitor Active');
-  console.groupEnd();
+  // Auth state monitoring (logs removed for production)
 };
 
 // Test scenarios
 export const runAuthTests = async () => {
-  if (!isBrowser) return;
-
-  console.group('🧪 Running Auth Tests');
-
-  // Test 1: Check initial state
-  console.group('Test 1: Initial State');
-  console.log('Session Storage:', {
-    signInAttempt: safeSessionStorage.getItem('signInAttempt'),
-    signInTimestamp: safeSessionStorage.getItem('signInTimestamp'),
-    authRedirectCount: safeSessionStorage.getItem('authRedirectCount'),
-    lastRedirectTime: safeSessionStorage.getItem('lastRedirectTime')
-  });
-  console.groupEnd();
-
-  // Test 2: Check popup support
-  console.group('Test 2: Popup Support');
-  console.log('Popup Supported:', supportsPopups());
-  console.log('Is Mobile:', /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
-  console.groupEnd();
-
-  // Test 3: Check redirect loop detection
-  console.group('Test 3: Redirect Loop Detection');
-  safeSessionStorage.setItem('authRedirectCount', '2');
-  safeSessionStorage.setItem('lastRedirectTime', Date.now().toString());
-  console.log('Redirect Loop Detected:', detectAuthRedirectLoop());
-  clearAuthSessionStorage();
-  console.groupEnd();
-
-  console.log('✅ Auth Tests Complete');
-  console.groupEnd();
+  // Auth tests removed for production
 }; 

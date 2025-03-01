@@ -19,6 +19,7 @@ interface MediaAttachment {
   url: string;
   filename: string;
   mimeType: string;
+  file?: File;
 }
 
 interface CreateTILPostProps {
@@ -31,6 +32,7 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [media, setMedia] = useState<MediaAttachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
 
@@ -75,89 +77,83 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted', { content, selectedCategories, isValid });
+    
+    // Validate form
+    const isValid = content.trim().length > 0 && selectedCategories.length > 0;
     
     if (!isValid) {
-      console.log('Form validation failed');
-      toast.error('Please add content (at least 3 words) and select at least one category');
       return;
     }
-
+    
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    setSubmissionError(null);
+    
     try {
-      console.log('Starting submission process');
-      setIsSubmitting(true);
+      // Process media attachments if any
+      let processedMedia: MediaAttachment[] = [];
       
-      // Upload media files to Firebase Storage if they are blob URLs
-      console.log('Processing media attachments', media);
-      const processedMedia = await Promise.all(
-        media.map(async (item) => {
-          // If the URL is a blob URL, we need to upload it to Firebase Storage
-          if (item.url.startsWith('blob:')) {
-            console.log('Uploading blob URL to Firebase Storage', item.filename);
-            try {
-              // Convert blob URL back to a file
-              const response = await fetch(item.url);
-              const blob = await response.blob();
-              const file = new File([blob], item.filename, { type: item.mimeType });
-              
-              // Upload to Firebase Storage with user ID in metadata
-              const storagePath = `posts/media/${Date.now()}_${item.filename}`;
-              const metadata = { userId: user?.uid || 'anonymous' };
-              const permanentUrl = await uploadFile(file, storagePath, metadata);
-              
-              console.log('Upload successful', permanentUrl);
-              return {
-                ...item,
-                url: permanentUrl
-              };
-            } catch (error) {
-              console.error('Error uploading file:', error);
-              throw error;
-            }
+      if (media.length > 0) {
+        // Process each media item
+        for (const item of media) {
+          try {
+            // Upload to Firebase Storage and get permanent URL
+            const permanentUrl = await uploadMediaToStorage(item.file, item.filename);
+            
+            // Add to processed media
+            processedMedia.push({
+              type: item.type,
+              url: permanentUrl,
+              filename: item.filename,
+              mimeType: item.file?.type || '',
+              file: item.file
+            });
+          } catch (error) {
+            // Handle upload error
+            setSubmissionError("Failed to upload media. Please try again.");
+            setIsSubmitting(false);
+            return;
           }
-          
-          // If it's not a blob URL, return as is
-          return item;
-        })
-      );
-
-      console.log('Media processed successfully', processedMedia);
-
-      // Submit the post with processed media
-      const postData = { 
-        content, 
+        }
+      }
+      
+      // Prepare post data
+      const postData = {
+        content,
         category: selectedCategories.join(', '),
-        isPrivate: false, 
-        media: processedMedia 
+        media: processedMedia,
       };
       
-      console.log('Submitting post data', postData);
-      onSubmit(postData);
+      // Submit post data
+      const postId = await onSubmit(postData);
       
-      // Clear form
-      setContent('');
-      setSelectedCategories([]);
-      setMedia([]);
-      toast.success('Post created successfully!');
+      // Reset form on success
+      resetForm();
+      
     } catch (error) {
-      console.error('Error during submission:', error);
-      toast.error('Failed to create post. Please try again.');
+      setSubmissionError("Failed to share your learning. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleShareClick = () => {
+    if (isValid && !isSubmitting) {
+      handleSubmit(new Event('submit') as unknown as React.FormEvent);
+    }
+  };
+
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>, type: MediaAttachment['type']) => {
     const files = e.target.files;
-    if (!files?.length) return;
+    if (!files || files.length === 0) return;
 
-    // In a real app, you would upload these files to a storage service
-    // For now, we'll create object URLs for preview
-    const newMedia = Array.from(files).map(file => ({
+    const newMedia = Array.from(files).map((file) => ({
       type,
       url: URL.createObjectURL(file),
       filename: file.name,
-      mimeType: file.type
+      mimeType: file.type,
+      file: file
     }));
 
     setMedia([...media, ...newMedia]);
@@ -171,6 +167,25 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
     URL.revokeObjectURL(newMedia[index].url);
     newMedia.splice(index, 1);
     setMedia(newMedia);
+  };
+
+  const resetForm = () => {
+    setContent('');
+    setSelectedCategories([]);
+    setMedia([]);
+    setSubmissionError(null);
+  };
+
+  // Add uploadMediaToStorage function
+  const uploadMediaToStorage = async (file: File | undefined, filename: string): Promise<string> => {
+    // If we have a file, upload it to Firebase Storage
+    if (file) {
+      // Upload to Firebase Storage with user ID in metadata
+      const storagePath = `posts/media/${Date.now()}_${filename}`;
+      const metadata = { userId: user?.uid || 'anonymous' };
+      return await uploadFile(file, storagePath, metadata);
+    }
+    throw new Error("No file provided for upload");
   };
 
   return (
@@ -293,19 +308,7 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
           className={`btn-primary ${
             !isValid || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
           }`}
-          onClick={(e) => {
-            console.log('Share Learning button clicked directly');
-            if (isValid && !isSubmitting) {
-              // Call handleSubmit directly with a synthetic event
-              const syntheticEvent = { preventDefault: () => {} } as React.FormEvent;
-              handleSubmit(syntheticEvent);
-            } else {
-              console.log('Button clicked but validation failed or already submitting', { isValid, isSubmitting });
-              if (!isValid) {
-                toast.error('Please add content (at least 3 words) and select at least one category');
-              }
-            }
-          }}
+          onClick={handleShareClick}
         >
           {isSubmitting ? 'Sharing...' : 'Share Learning'}
         </button>

@@ -21,15 +21,11 @@ const isBrowser = typeof window !== 'undefined';
 
 // Custom logger to replace any potential debug calls
 const logger = {
-  log: (...args: any[]) => console.log('[Auth]', ...args, new Date().toISOString()),
-  error: (...args: any[]) => console.error('[Auth]', ...args, new Date().toISOString()),
-  warn: (...args: any[]) => console.warn('[Auth]', ...args, new Date().toISOString()),
-  info: (...args: any[]) => console.info('[Auth]', ...args, new Date().toISOString()),
-  debug: (...args: any[]) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.debug('[Auth Debug]', ...args, new Date().toISOString());
-    }
-  }
+  log: (...args: any[]) => {},
+  error: (...args: any[]) => {},
+  warn: (...args: any[]) => {},
+  info: (...args: any[]) => {},
+  debug: (...args: any[]) => {}
 };
 
 // Add to window for debugging only in browser environment
@@ -55,10 +51,7 @@ if (isBrowser) {
       }
     });
 
-    console.group('🔍 Auth State Monitor');
-    console.log('Initial State:', getState());
-    console.log('🎯 Auth State Monitor Active');
-    console.groupEnd();
+    // Auth state monitoring (logs removed for production)
   };
   (window as any).__AUTH_STATE__ = {
     getState: () => ({

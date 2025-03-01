@@ -100,76 +100,32 @@ export const TILPost: React.FC<TILPostProps> = ({
     const displayMedia = post.media.slice(0, 4);
 
     return (
-      <div
-        className={`grid mt-3 mb-2 cursor-pointer overflow-visible ${
-          thumbnailCount === 1 ? 'grid-cols-1' :
-          thumbnailCount === 2 ? 'grid-cols-2' :
-          'grid-cols-2'
-        }`}
-        onClick={(e) => {
-          e.stopPropagation();
-          router.push(`/post/${post.id}`);
-        }}
-      >
-        {displayMedia.map((item, index) => (
-          <div
-            key={index}
-            className={`relative ${
-              thumbnailCount === 1 ? 'aspect-[16/9]' :
-              thumbnailCount === 2 ? 'aspect-square' :
-              index === 0 ? 'aspect-square' : 'aspect-square'
-            } ${
-              thumbnailCount > 2 && index === 0 ? 'col-span-2' : ''
-            } overflow-hidden`}
-          >
-            {item.type === 'image' && (
-              <Image
-                src={item.url}
-                alt={item.filename}
-                fill
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="object-cover"
-                unoptimized={true}
-                onError={(e) => {
-                  const imgElement = e.target as HTMLImageElement;
-                  imgElement.src = "/images/placeholder.svg";
-                }}
-              />
-            )}
-            {item.type === 'video' && (
-              <div className="relative h-full w-full bg-gray-100">
-                <video
-                  src={item.url}
-                  className="h-full w-full object-cover"
+      <div className="grid grid-cols-2 gap-2 mt-3">
+        {displayMedia.map((media, index) => {
+          if (media.type === 'image') {
+            return (
+              <div 
+                key={index} 
+                className="relative aspect-square rounded-lg overflow-hidden bg-gray-100"
+              >
+                <Image
+                  src={media.url}
+                  alt={media.filename || `Image ${index + 1}`}
+                  fill
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                  className="object-cover"
+                  loading="lazy"
                 />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                  <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </div>
+                {showOverlay && index === 3 && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                    <span className="text-white text-xl font-bold">+{thumbnailCount - 4}</span>
+                  </div>
+                )}
               </div>
-            )}
-            {item.type === 'audio' && (
-              <div className="h-full w-full bg-gray-100 flex items-center justify-center">
-                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                </svg>
-              </div>
-            )}
-            {item.type === 'file' && (
-              <div className="h-full w-full bg-gray-100 flex items-center justify-center">
-                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-              </div>
-            )}
-            {showOverlay && index === 3 && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <span className="text-white text-xl font-bold">+{thumbnailCount - 4}</span>
-              </div>
-            )}
-          </div>
-        ))}
+            );
+          }
+          // ... existing code ...
+        })}
       </div>
     );
   };

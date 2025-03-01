@@ -1,11 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDeepgram } from '../lib/contexts/DeepgramContext';
 import { motion } from 'framer-motion';
 import { MicrophoneIcon, StopIcon } from '@heroicons/react/24/outline';
 
-export default function VoiceRecorder() {
+interface VoiceRecorderProps {
+  onTranscriptChange?: (transcript: string) => void;
+}
+
+export default function VoiceRecorder({ onTranscriptChange }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const { connectToDeepgram, disconnectFromDeepgram, connectionState, realtimeTranscript } = useDeepgram();
 
@@ -17,12 +21,13 @@ export default function VoiceRecorder() {
   const handleStopRecording = async () => {
     disconnectFromDeepgram();
     setIsRecording(false);
-    
-    // Log the transcript instead of saving to Firebase
-    if (realtimeTranscript) {
-      console.log('Transcript:', realtimeTranscript);
-    }
   };
+
+  useEffect(() => {
+    if (realtimeTranscript && onTranscriptChange) {
+      onTranscriptChange(realtimeTranscript);
+    }
+  }, [realtimeTranscript, onTranscriptChange]);
 
   return (
     <div className="w-full max-w-md">

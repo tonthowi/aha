@@ -12,6 +12,7 @@ import {
   Code, Quote, Heading2, Link as LinkIcon, Image as ImageIcon,
   Undo, Redo, AlignLeft, AlignCenter, AlignRight,
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 interface RichTextEditorProps {
   content: string;
@@ -132,7 +133,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
               view.dispatch(tr.insert(pos, editor.schema.nodes.image.create({ src: imageUrl })));
             }
           } catch (error) {
-            console.error('Failed to upload image:', error);
+            toast.error('Failed to upload image');
+            return false;
           }
         });
 
@@ -156,7 +158,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
               view.dispatch(tr.replaceSelectionWith(editor.schema.nodes.image.create({ src: imageUrl })));
             }
           } catch (error) {
-            console.error('Failed to upload image:', error);
+            toast.error('Failed to upload pasted image');
+            return false;
           }
         });
 
@@ -196,7 +199,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
             const url = await onImageUpload(file);
             editor.chain().focus().setImage({ src: url }).run();
           } catch (error) {
-            console.error('Failed to upload image:', error);
+            toast.error('Failed to upload image');
           }
         }
       };

@@ -43,9 +43,6 @@ export function useMasonryLayout(
       newGap = mergedConfig.gaps.md;
     }
 
-    // Test log for debugging layout changes
-    console.debug('[Layout] Columns:', newColumnCount, 'Gap:', newGap, 'Width:', width);
-
     setColumnCount(newColumnCount);
     setGap(newGap);
   }, [mergedConfig]);

@@ -12,52 +12,39 @@ export const getAvatarUrl = (name: string, avatarUrl?: string) => {
   return `https://avatar.iran.liara.run/username?username=${encodeURIComponent(name)}`;
 };
 
-export function formatTimestamp(date: string | Date): string {
+export function formatTimestamp(timestamp: string | number | Date): string {
   try {
-    const d = new Date(date);
+    const date = typeof timestamp === 'string' && timestamp.includes('T')
+      ? new Date(timestamp)
+      : new Date(Number(timestamp));
     
     // Check if date is valid
-    if (isNaN(d.getTime())) {
-      return "Invalid Date";
+    if (isNaN(date.getTime())) {
+      return 'Invalid date';
     }
     
     const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
     
-    // Format the date part: "Wed, Feb 26"
-    const dateStr = d.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    });
-
-    // Format the time part: "10:42 AM"
-    const timeStr = d.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-
-    // Calculate the relative time
-    const diffInMilliseconds = now.getTime() - d.getTime();
-    const diffInSeconds = Math.floor(diffInMilliseconds / 1000);
-    const diffInMinutes = Math.floor(diffInSeconds / 60);
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    const diffInDays = Math.floor(diffInHours / 24);
-
-    let relativeTime = '';
-    if (diffInDays > 0) {
-      relativeTime = `(${diffInDays} ${diffInDays === 1 ? 'day' : 'days'} ago)`;
-    } else if (diffInHours > 0) {
-      relativeTime = `(${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago)`;
-    } else if (diffInMinutes > 0) {
-      relativeTime = `(${diffInMinutes} ${diffInMinutes === 1 ? 'minute' : 'minutes'} ago)`;
+    if (diffInSeconds < 60) {
+      return 'just now';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes}m ago`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours}h ago`;
+    } else if (diffInSeconds < 604800) {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days}d ago`;
     } else {
-      relativeTime = '(just now)';
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+      });
     }
-
-    return `${dateStr}, ${timeStr} ${relativeTime}`;
   } catch (error) {
-    console.error("Error formatting timestamp:", error);
-    return "Invalid Date";
+    return 'Invalid date';
   }
 } 

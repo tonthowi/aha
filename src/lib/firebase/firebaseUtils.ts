@@ -43,7 +43,6 @@ export const signInWithGoogle = async () => {
     const result = await signInWithPopup(auth, provider);
     return result.user;
   } catch (error) {
-    console.error("Error signing in with Google", error);
     throw error;
   }
 };
@@ -62,7 +61,6 @@ export const createUserProfile = async (userData: Omit<UserRecord, 'createdAt' |
     
     return userData.uid;
   } catch (error) {
-    console.error("Error creating user profile:", error);
     throw error;
   }
 };
@@ -72,7 +70,6 @@ export const getUserProfile = async (uid: string): Promise<UserRecord | null> =>
     const userDoc = await getDoc(doc(db, "users", uid));
     return userDoc.exists() ? userDoc.data() as UserRecord : null;
   } catch (error) {
-    console.error("Error fetching user profile:", error);
     throw error;
   }
 };
@@ -85,14 +82,12 @@ export const updateUserProfile = async (uid: string, data: Partial<Omit<UserReco
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Error updating user profile:", error);
     throw error;
   }
 };
 
 // Post management
 export const createPost = async (postData: any): Promise<string> => {
-  console.log('firebaseUtils: createPost called with data', postData);
   try {
     const db = getFirestore();
     const postsCollection = collection(db, 'posts');
@@ -110,18 +105,14 @@ export const createPost = async (postData: any): Promise<string> => {
       bookmarkCount: 0,
     };
     
-    console.log('firebaseUtils: Prepared post data with timestamp', postWithTimestamp);
-    
     // Add document to Firestore
     const docRef = await addDoc(postsCollection, postWithTimestamp);
-    console.log('firebaseUtils: Post created successfully with ID', docRef.id);
     
     // Update the document with its ID
     await updateDoc(docRef, { id: docRef.id });
     
     return docRef.id;
   } catch (error) {
-    console.error('firebaseUtils: Error creating post:', error);
     throw error;
   }
 };
@@ -156,7 +147,6 @@ export const getPosts = async (options?: {
     
     return querySnapshot.docs.map(doc => doc.data() as PostRecord);
   } catch (error) {
-    console.error("Error fetching posts:", error);
     throw error;
   }
 };
@@ -176,7 +166,6 @@ export const getPostById = async (postId: string): Promise<PostRecord | null> =>
     
     return data;
   } catch (error) {
-    console.error("Error fetching post by ID:", error);
     throw error;
   }
 };
@@ -189,7 +178,6 @@ export const updatePost = async (postId: string, data: Partial<Omit<PostRecord, 
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Error updating post:", error);
     throw error;
   }
 };
@@ -198,7 +186,6 @@ export const deletePost = async (postId: string) => {
   try {
     await deleteDoc(doc(db, "posts", postId));
   } catch (error) {
-    console.error("Error deleting post:", error);
     throw error;
   }
 };
@@ -239,7 +226,6 @@ export const toggleLike = async (postId: string, userId: string): Promise<boolea
       return true; // Indicates the post is now liked
     }
   } catch (error) {
-    console.error("Error toggling like:", error);
     throw error;
   }
 };
@@ -279,7 +265,6 @@ export const toggleBookmark = async (postId: string, userId: string): Promise<bo
       return true; // Indicates the post is now bookmarked
     }
   } catch (error) {
-    console.error("Error toggling bookmark:", error);
     throw error;
   }
 };
@@ -290,7 +275,6 @@ export const getUserLikes = async (userId: string): Promise<string[]> => {
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => (doc.data() as LikeRecord).postId);
   } catch (error) {
-    console.error("Error fetching user likes:", error);
     throw error;
   }
 };
@@ -301,7 +285,6 @@ export const getUserBookmarks = async (userId: string): Promise<string[]> => {
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => (doc.data() as BookmarkRecord).postId);
   } catch (error) {
-    console.error("Error fetching user bookmarks:", error);
     throw error;
   }
 };

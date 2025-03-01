@@ -30,28 +30,18 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (post: any) => {
-    console.log('CreatePostModal: Received post data from CreateTILPost', post);
     try {
       setIsSubmitting(true);
       await onSubmit(post);
-      console.log('CreatePostModal: onSubmit callback executed successfully');
-      // Only close the modal after successful submission
       onClose();
-      console.log('CreatePostModal: Modal closed');
     } catch (error) {
-      console.error('CreatePostModal: Error in submission process', error);
-      toast.error('Failed to create post. Please try again.');
-    } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleClose = () => {
     if (!isSubmitting) {
-      console.log('CreatePostModal: Closing modal');
       onClose();
-    } else {
-      console.log('CreatePostModal: Cannot close while submitting');
     }
   };
 

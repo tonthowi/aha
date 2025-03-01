@@ -17,17 +17,13 @@ export default function Home() {
   const { user, signInWithGoogle } = useAuth();
 
   const handleCreatePost = async (postData: any) => {
-    console.log("Home: handleCreatePost called with data", postData);
     try {
       setIsCreatingPost(true);
-      console.log("Home: Attempting to add post");
       const postId = await addPost(postData);
-      console.log("Home: Post added successfully with ID", postId);
       setIsCreateModalOpen(false);
-      toast.success("Your learning has been shared!");
+      toast.success("Your tidbit learning has been shared!");
       return postId; // Return the post ID so the modal knows the submission was successful
     } catch (error) {
-      console.error("Home: Error adding post", error);
       toast.error("Failed to share your learning. Please try again.");
       throw error; // Re-throw the error so the modal can handle it
     } finally {
@@ -37,10 +33,7 @@ export default function Home() {
 
   const handleCloseModal = () => {
     if (!isCreatingPost) {
-      console.log("Home: Closing create post modal");
       setIsCreateModalOpen(false);
-    } else {
-      console.log("Home: Cannot close modal while creating post");
     }
   };
 
@@ -56,6 +49,7 @@ export default function Home() {
                 fill
                 className="object-contain"
                 priority
+                sizes="(max-width: 768px) 100vw, 160px"
               />
             </div>
           </div>
@@ -83,7 +77,6 @@ export default function Home() {
 
         <motion.button
           onClick={() => {
-            console.log("Home: Create post button clicked, user:", user ? "logged in" : "not logged in");
             if (user) {
               setIsCreateModalOpen(true);
             } else {
@@ -114,7 +107,7 @@ export default function Home() {
                 <path d="M5.511 14.18c-.24-.72-.377-1.49-.377-2.28 0-.79.137-1.56.377-2.28V6.387h-4.02C.577 8.008 0 10.02 0 12.1c0 2.08.577 4.092 1.491 5.713l4.02-3.233z" fill="#FBBC05"/>
                 <path d="M12.24 4.844c1.763 0 3.347.607 4.595 1.794l3.45-3.45C18.205 1.19 15.489 0 12.24 0 7.565 0 3.534 2.73 1.491 6.387l4.02 3.233c.949-2.853 3.599-4.975 6.729-4.975z" fill="#EA4335"/>
               </svg>
-              <span className="text-lg font-medium">Sign in to share your learnings</span>
+              <span className="text-lg font-medium">Sign in to share your tidbits learnings.</span>
             </div>
           )}
         </motion.button>

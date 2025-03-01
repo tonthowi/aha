@@ -190,17 +190,16 @@ export const supportsPopups = (): boolean => {
   if (!isBrowser) return false;
   
   try {
-    // Check if we're on the production site
-    const isProduction = window.location.hostname.includes('firebaseapp.com') || 
-                         window.location.hostname.includes('web.app') ||
-                         !window.location.hostname.includes('localhost');
+    // Check if we're on localhost
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1');
     
-    // Always use redirect for production site
-    if (isProduction) {
+    // Always use popup for localhost, redirect for deployed sites
+    if (!isLocalhost) {
       return false;
     }
     
-    // For localhost, use the original logic
+    // For localhost, also check browser compatibility
     // Check if we're on mobile
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (isMobile) return false;

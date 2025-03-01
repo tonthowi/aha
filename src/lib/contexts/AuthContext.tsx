@@ -288,16 +288,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       logger.debug('Starting Google sign in');
       
-      // Log the hostname to help with debugging
+      // Check if we're on localhost to determine sign-in method
       const hostname = window.location.hostname;
-      const isProduction = hostname.includes('firebaseapp.com') || 
-                           hostname.includes('web.app') ||
-                           !hostname.includes('localhost');
+      const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1');
       
       logger.debug('Authentication environment', {
         hostname,
-        isProduction,
-        shouldUseRedirect: isProduction
+        isLocalhost,
+        shouldUsePopup: isLocalhost
       });
       
       // Mark that we're attempting to sign in
@@ -314,17 +312,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         prompt: 'select_account'
       });
       
-      // Determine if we should use popup or redirect
-      const usePopup = supportsPopups();
-      
-      logger.debug('Auth method decision', {
-        usePopup,
-        hostname,
-        isProduction
-      });
-      
-      if (usePopup) {
-        logger.debug('Using popup for sign in');
+      // Use popup for localhost, redirect for deployed sites
+      if (isLocalhost) {
+        logger.debug('Using popup for sign in (localhost)');
         const result = await signInWithPopup(auth!, provider);
         
         if (result.user) {
@@ -338,7 +328,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           clearAuthSessionStorage();
         }
       } else {
-        logger.debug('Using redirect for sign in');
+        logger.debug('Using redirect for sign in (deployed site)');
         await signInWithRedirect(auth!, provider);
         // Control flow will leave this function as the page redirects
       }

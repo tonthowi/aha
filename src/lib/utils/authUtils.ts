@@ -187,13 +187,20 @@ export const resetRedirectCount = (): void => {
 
 // Function to check if the browser supports popups
 export const supportsPopups = (): boolean => {
-  // Always return false to force redirect-based authentication
-  return false;
-  
-  /* Original implementation commented out
   if (!isBrowser) return false;
   
   try {
+    // Check if we're on the production site
+    const isProduction = window.location.hostname.includes('firebaseapp.com') || 
+                         window.location.hostname.includes('web.app') ||
+                         !window.location.hostname.includes('localhost');
+    
+    // Always use redirect for production site
+    if (isProduction) {
+      return false;
+    }
+    
+    // For localhost, use the original logic
     // Check if we're on mobile
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (isMobile) return false;
@@ -213,7 +220,6 @@ export const supportsPopups = (): boolean => {
     // Error handling without console logs
     return false;
   }
-  */
 };
 
 // Test helper functions with COOP-safe checks
@@ -232,7 +238,11 @@ export const monitorAuthState = () => {
     browser: {
       userAgent: navigator.userAgent,
       isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
-      isInIframe: window.self !== window.top
+      isInIframe: window.self !== window.top,
+      hostname: window.location.hostname,
+      isProduction: window.location.hostname.includes('firebaseapp.com') || 
+                   window.location.hostname.includes('web.app') ||
+                   !window.location.hostname.includes('localhost')
     }
   });
 

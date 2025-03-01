@@ -9,7 +9,6 @@ import { usePosts } from "@/lib/contexts/PostsContext";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { AuthButton } from "@/components/AuthButton";
 import toast from "react-hot-toast";
-import AuthMethodIndicator from "@/components/AuthMethodIndicator";
 
 export default function Home() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -74,7 +73,6 @@ export default function Home() {
           <h1 className="text-4xl font-bold tracking-tight mb-4">
           People sharing tidbits—brief facts you might find surprising or interesting.
           </h1>
-          <AuthMethodIndicator />
         </div>
 
         <motion.button

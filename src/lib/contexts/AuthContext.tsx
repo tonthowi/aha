@@ -172,10 +172,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             provider: result.user.providerData[0]?.providerId
           });
           
-          console.log('AUTH: Successfully processed redirect result');
-          // Add a flag to sessionStorage to indicate redirect auth was successful
-          sessionStorage.setItem('redirectAuthSuccess', 'true');
-          
           setUser(result.user);
           resetRedirectCount();
           clearAuthSessionStorage();
@@ -292,6 +288,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       logger.debug('Starting Google sign in');
       
+      // Log the hostname to help with debugging
+      const hostname = window.location.hostname;
+      const isProduction = hostname.includes('firebaseapp.com') || 
+                           hostname.includes('web.app') ||
+                           !hostname.includes('localhost');
+      
+      logger.debug('Authentication environment', {
+        hostname,
+        isProduction,
+        shouldUseRedirect: isProduction
+      });
+      
       // Mark that we're attempting to sign in
       sessionStorage.setItem('signInAttempt', 'true');
       sessionStorage.setItem('signInTimestamp', new Date().toISOString());
@@ -309,9 +317,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Determine if we should use popup or redirect
       const usePopup = supportsPopups();
       
+      logger.debug('Auth method decision', {
+        usePopup,
+        hostname,
+        isProduction
+      });
+      
       if (usePopup) {
         logger.debug('Using popup for sign in');
-        console.log('AUTH: Using popup-based authentication');
         const result = await signInWithPopup(auth!, provider);
         
         if (result.user) {
@@ -326,9 +339,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         logger.debug('Using redirect for sign in');
-        console.log('AUTH: Using redirect-based authentication');
-        // Add a flag to sessionStorage to indicate redirect auth is being used
-        sessionStorage.setItem('usingRedirectAuth', 'true');
         await signInWithRedirect(auth!, provider);
         // Control flow will leave this function as the page redirects
       }

@@ -10,13 +10,11 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const limit = url.searchParams.get("limit") ? parseInt(url.searchParams.get("limit")!) : undefined;
     const authorId = url.searchParams.get("authorId") || undefined;
-    const isPrivate = url.searchParams.has("isPrivate") ? url.searchParams.get("isPrivate") === "true" : undefined;
     
     // Fetch posts based on query parameters
     const posts = await getPosts({
       limit,
       filterByAuthor: authorId,
-      isPrivate,
     });
     
     return NextResponse.json({ success: true, data: posts });
@@ -66,7 +64,7 @@ export async function POST(request: NextRequest) {
       authorId: userId,
       authorName: userName,
       authorPhotoURL: userPhoto,
-      isPrivate: requestData.isPrivate || false,
+      isPrivate: false,
       media: requestData.media || [],
     };
     

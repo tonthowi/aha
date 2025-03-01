@@ -13,7 +13,9 @@ import {
   subscribeToUserLikes,
   subscribeToUserBookmarks,
   toggleLike as firebaseToggleLike,
-  toggleBookmark as firebaseToggleBookmark
+  toggleBookmark as firebaseToggleBookmark,
+  updatePost as firebaseUpdatePost,
+  deletePost as firebaseDeletePost
 } from '@/lib/firebase/firebaseUtils';
 
 interface MediaAttachment {
@@ -34,7 +36,6 @@ export interface Post {
   author: Author;
   category: string;
   createdAt: string;
-  isPrivate: boolean;
   media?: MediaAttachment[];
   likes: number;
   comments: number;
@@ -52,7 +53,6 @@ const initialPosts: Post[] = [
     },
     category: '💻 Programming',
     createdAt: '2025-02-25T06:30:00.000Z',
-    isPrivate: false,
     likes: 42,
     comments: 5,
     bookmarks: 12
@@ -66,7 +66,6 @@ const initialPosts: Post[] = [
     },
     category: '🌐 Web Development',
     createdAt: '2025-02-24T14:15:00.000Z',
-    isPrivate: false,
     likes: 38,
     comments: 7,
     bookmarks: 9
@@ -79,7 +78,6 @@ const initialPosts: Post[] = [
     },
     category: '💻 Programming',
     createdAt: new Date().toISOString(),
-    isPrivate: false,
     likes: 0,
     comments: 0,
     bookmarks: 0
@@ -90,6 +88,8 @@ interface PostsContextType {
   posts: Post[];
   addPost: (post: Omit<Post, 'id' | 'author' | 'createdAt' | 'likes' | 'comments' | 'bookmarks'>) => Promise<string>;
   getPost: (id: string) => Promise<Post | null>;
+  editPost: (id: string, data: Partial<Omit<Post, 'id' | 'author' | 'createdAt' | 'likes' | 'comments' | 'bookmarks'>>) => Promise<void>;
+  deletePost: (id: string) => Promise<void>;
   likedPosts: Set<string>;
   bookmarkedPosts: Set<string>;
   isLoading: boolean;
@@ -110,7 +110,6 @@ function convertFirebasePostToUIPost(postRecord: PostRecord): Post {
     },
     category: postRecord.category,
     createdAt: postRecord.createdAt,
-    isPrivate: postRecord.isPrivate,
     media: postRecord.media,
     likes: postRecord.likeCount,
     comments: postRecord.commentCount,
@@ -178,7 +177,7 @@ export function PostsProvider({ children }: { children: ReactNode }) {
       authorId: user.uid,
       authorName: user.displayName || 'Anonymous User',
       authorPhotoURL: user.photoURL || undefined,
-      isPrivate: postData.isPrivate,
+      isPrivate: false,
       media: postData.media || [],
     };
     
@@ -209,12 +208,54 @@ export function PostsProvider({ children }: { children: ReactNode }) {
     await firebaseToggleBookmark(postId, user.uid);
   };
 
+  const editPost = async (id: string, data: Partial<Omit<Post, 'id' | 'author' | 'createdAt' | 'likes' | 'comments' | 'bookmarks'>>): Promise<void> => {
+    if (!user) {
+      throw new Error("You must be logged in to edit a post");
+    }
+    
+    // Get the post to check ownership
+    const post = await getPostById(id);
+    if (!post) {
+      throw new Error("Post not found");
+    }
+    
+    // Check if the user is the author of the post
+    if (post.authorId !== user.uid) {
+      throw new Error("You can only edit your own posts");
+    }
+    
+    // Update post in Firebase
+    await firebaseUpdatePost(id, data);
+  };
+
+  const deletePost = async (id: string): Promise<void> => {
+    if (!user) {
+      throw new Error("You must be logged in to delete a post");
+    }
+    
+    // Get the post to check ownership
+    const post = await getPostById(id);
+    if (!post) {
+      throw new Error("Post not found");
+    }
+    
+    // Check if the user is the author of the post
+    if (post.authorId !== user.uid) {
+      throw new Error("You can only delete your own posts");
+    }
+    
+    // Delete post in Firebase
+    await firebaseDeletePost(id);
+  };
+
   return (
     <PostsContext.Provider
       value={{
         posts,
         addPost,
         getPost,
+        editPost,
+        deletePost,
         likedPosts,
         bookmarkedPosts,
         isLoading,

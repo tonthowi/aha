@@ -13,7 +13,6 @@ const initialPosts: Omit<PostRecord, 'id'>[] = [
     category: '💻 Programming',
     createdAt: '2023-02-25T06:30:00.000Z',
     updatedAt: '2023-02-25T06:30:00.000Z',
-    isPrivate: false,
     likeCount: 42,
     commentCount: 5,
     bookmarkCount: 12
@@ -26,7 +25,6 @@ const initialPosts: Omit<PostRecord, 'id'>[] = [
     category: '🌐 Web Development',
     createdAt: '2023-02-24T14:15:00.000Z',
     updatedAt: '2023-02-24T14:15:00.000Z',
-    isPrivate: false,
     likeCount: 38,
     commentCount: 7,
     bookmarkCount: 9
@@ -39,7 +37,6 @@ const initialPosts: Omit<PostRecord, 'id'>[] = [
     category: '💻 Programming',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    isPrivate: false,
     likeCount: 0,
     commentCount: 0,
     bookmarkCount: 0

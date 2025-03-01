@@ -38,19 +38,14 @@ service cloud.firestore {
     
     // Posts collection rules
     match /posts/{postId} {
-      // Anyone can read non-private posts
-      // Only the owner can read their own private posts
+      // Anyone can read posts
       // Only authenticated users can create posts
       // Only the post owner can update or delete the post
       function isPostOwner() {
         return isSignedIn() && isOwner(resource.data.authorId);
       }
       
-      function isPublicPost() {
-        return !resource.data.isPrivate;
-      }
-      
-      allow read: if isPublicPost() || (isSignedIn() && isOwner(resource.data.authorId));
+      allow read: if true;
       allow create: if isSignedIn();
       allow update: if isPostOwner();
       allow delete: if isPostOwner();

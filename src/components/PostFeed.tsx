@@ -19,7 +19,6 @@ interface Post {
   author: Author;
   category: string;
   createdAt: string;
-  isPrivate: boolean;
   media?: MediaAttachment[];
   likes: number;
   comments: number;

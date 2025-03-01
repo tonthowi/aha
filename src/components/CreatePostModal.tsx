@@ -17,7 +17,6 @@ interface CreatePostModalProps {
   onSubmit: (post: {
     content: string;
     category: string;
-    isPrivate: boolean;
     media?: MediaAttachment[];
   }) => void;
 }

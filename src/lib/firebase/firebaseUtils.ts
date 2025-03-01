@@ -116,8 +116,7 @@ export const getPosts = async (options?: {
   limit?: number, 
   orderByField?: keyof PostRecord,
   orderDirection?: 'asc' | 'desc',
-  filterByAuthor?: string,
-  isPrivate?: boolean
+  filterByAuthor?: string
 }) => {
   try {
     let postsQuery = collection(db, "posts");
@@ -127,10 +126,6 @@ export const getPosts = async (options?: {
     
     if (options?.filterByAuthor) {
       constraints.push(where("authorId", "==", options.filterByAuthor));
-    }
-    
-    if (options?.isPrivate !== undefined) {
-      constraints.push(where("isPrivate", "==", options.isPrivate));
     }
     
     // Default sorting
@@ -313,17 +308,12 @@ export const subscribeToUserBookmarks = (userId: string, callback: (bookmarkedPo
 
 export const subscribeToPostUpdates = (callback: (posts: PostRecord[]) => void, options?: {
   limit?: number,
-  filterByAuthor?: string,
-  isPrivate?: boolean
+  filterByAuthor?: string
 }) => {
   let constraints: any[] = [orderBy("createdAt", "desc")];
   
   if (options?.filterByAuthor) {
     constraints.push(where("authorId", "==", options.filterByAuthor));
-  }
-  
-  if (options?.isPrivate !== undefined) {
-    constraints.push(where("isPrivate", "==", options.isPrivate));
   }
   
   if (options?.limit) {

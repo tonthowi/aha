@@ -1,5 +1,5 @@
 import { useState, useRef, ChangeEvent } from 'react';
-import { PhotoIcon, VideoCameraIcon, MusicalNoteIcon, PaperClipIcon, LockClosedIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+import { PhotoIcon, VideoCameraIcon, MusicalNoteIcon, PaperClipIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { Post } from '@/lib/contexts/PostsContext';
@@ -28,7 +28,6 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
   const [content, setContent] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAllCategories, setShowAllCategories] = useState(false);
-  const [isPrivate, setIsPrivate] = useState(false);
   const [media, setMedia] = useState<MediaAttachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
@@ -107,14 +106,13 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
       onSubmit({ 
         content, 
         category: selectedCategories.join(', '),
-        isPrivate, 
+        isPrivate: false, 
         media: processedMedia 
       });
       
       // Clear form
       setContent('');
       setSelectedCategories([]);
-      setIsPrivate(false);
       setMedia([]);
     } catch (error) {
       console.error('Error uploading media:', error);
@@ -188,38 +186,6 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
               {showAllCategories ? 'Show less' : 'Show more'}
             </button>
           )}
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-black mb-2">
-          Visibility
-        </label>
-        <div className="flex gap-4">
-          <button
-            type="button"
-            onClick={() => setIsPrivate(false)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
-              !isPrivate
-                ? 'border-black bg-black text-white'
-                : 'border-[#e6e6e6] text-[#666666] hover:border-black hover:text-black'
-            } transition-colors`}
-          >
-            <GlobeAltIcon className="w-5 h-5" />
-            <span>Public</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsPrivate(true)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
-              isPrivate
-                ? 'border-black bg-black text-white'
-                : 'border-[#e6e6e6] text-[#666666] hover:border-black hover:text-black'
-            } transition-colors`}
-          >
-            <LockClosedIcon className="w-5 h-5" />
-            <span>Private</span>
-          </button>
         </div>
       </div>
 

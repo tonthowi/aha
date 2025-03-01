@@ -1,29 +1,32 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { HeartIcon, ChatBubbleLeftIcon, BookmarkIcon } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon, BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid";
 import { usePosts } from "@/lib/contexts/PostsContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getAvatarUrl, formatTimestamp } from "@/lib/utils";
 import { Post } from "@/lib/contexts/PostsContext";
 import { CategoryPill } from '@/components/ui/CategoryPill';
 import { EngagementBar } from '@/components/ui/EngagementBar';
 import { useAuth } from "@/lib/hooks/useAuth";
+import { PopoverConfirm } from "@/components/ui/PopoverConfirm";
 
 export default function PostPage() {
   const router = useRouter();
   const params = useParams();
   const postId = params.id as string;
-  const { getPost, likedPosts, bookmarkedPosts, toggleLike, toggleBookmark } = usePosts();
+  const { getPost, likedPosts, bookmarkedPosts, toggleLike, toggleBookmark, deletePost } = usePosts();
   const { user } = useAuth();
   
   const [post, setPost] = useState<Post | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeletePopoverOpen, setIsDeletePopoverOpen] = useState(false);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
   // Fetch post data
   useEffect(() => {
@@ -84,6 +87,25 @@ export default function PostPage() {
   const isLiked = likedPosts.has(postId);
   const isBookmarked = bookmarkedPosts.has(postId);
   const isOwnPost = Boolean(user && post && (post.author.name === user.displayName || post.author.name === "Anonymous User"));
+
+  const handleEditClick = () => {
+    router.push(`/post/${postId}/edit`);
+  };
+
+  const handleDeleteClick = () => {
+    setIsDeletePopoverOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      setIsDeletePopoverOpen(false);
+      await deletePost(postId);
+      router.push('/');
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      // Could show error toast notification here
+    }
+  };
 
   const renderMediaContent = () => {
     if (!post.media || post.media.length === 0) return null;
@@ -171,6 +193,36 @@ export default function PostPage() {
                 {formatTimestamp(post.createdAt)}
               </time>
             </div>
+
+            {isOwnPost && (
+              <div className="flex items-center gap-2 relative">
+                <button
+                  onClick={handleEditClick}
+                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  aria-label="Edit post"
+                >
+                  <PencilIcon className="w-5 h-5 text-gray-600" />
+                </button>
+                <button
+                  ref={deleteButtonRef}
+                  onClick={handleDeleteClick}
+                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  aria-label="Delete post"
+                >
+                  <TrashIcon className="w-5 h-5 text-gray-600" />
+                </button>
+                
+                <PopoverConfirm
+                  isOpen={isDeletePopoverOpen}
+                  message="Are you sure you want to delete this post? This action cannot be undone."
+                  confirmText="Delete"
+                  onConfirm={confirmDelete}
+                  onCancel={() => setIsDeletePopoverOpen(false)}
+                  isDestructive={true}
+                  position="bottom"
+                />
+              </div>
+            )}
           </div>
         </div>
       </header>

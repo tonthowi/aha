@@ -13,12 +13,14 @@ import { MasonryGridSkeleton } from "@/components/skeletons/MasonryGridSkeleton"
 import { usePullToRefresh } from "@/lib/hooks/usePullToRefresh";
 import { RefreshSpinner } from "@/components/RefreshSpinner";
 import { SparklesIcon, UserIcon, BookmarkIcon } from "@heroicons/react/24/outline";
+import { useRouter } from "next/navigation";
 
 export function TILFeed() {
   const { user } = useAuth();
-  const { posts, toggleLike, toggleBookmark, likedPosts, bookmarkedPosts, isLoading } = usePosts();
+  const { posts, toggleLike, toggleBookmark, deletePost, likedPosts, bookmarkedPosts, isLoading } = usePosts();
   const [currentTab, setCurrentTab] = useState("for-you");
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const router = useRouter();
 
   // Implement real refresh function that uses Firebase
   const handleRefresh = useCallback(async () => {
@@ -89,6 +91,20 @@ export function TILFeed() {
     } catch (error) {
       console.error("Error bookmarking post:", error);
       // Could show toast notification here
+    }
+  };
+
+  const handleEdit = (postId: string) => {
+    router.push(`/post/${postId}/edit`);
+  };
+
+  const handleDelete = async (postId: string) => {
+    try {
+      await deletePost(postId);
+      // Could show success toast notification here
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      // Could show error toast notification here
     }
   };
 
@@ -186,6 +202,8 @@ export function TILFeed() {
                     isBookmarked={bookmarkedPosts.has(post.id)}
                     onLike={() => handleLike(post.id)}
                     onBookmark={() => handleBookmark(post.id)}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
                   />
                 </MasonryItem>
               ))}

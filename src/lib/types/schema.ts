@@ -21,7 +21,7 @@ export interface PostRecord {
   category: string;
   createdAt: string;
   updatedAt: string;
-  isPrivate: boolean;
+  isPrivate?: boolean;
   media?: {
     type: 'image' | 'video' | 'audio' | 'file';
     url: string;

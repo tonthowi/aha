@@ -25,7 +25,6 @@ interface Post {
   author: Author;
   category: string;
   createdAt: string;
-  isPrivate: boolean;
   media?: MediaAttachment[];
   likes: number;
   comments: number;
@@ -113,13 +112,6 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                         <div className="text-sm text-[#666666]">{post.createdAt}</div>
                       </div>
                     </div>
-                    
-                    {post.isPrivate ? (
-                      <div className="flex items-center gap-1 text-[#666666]">
-                        <LockClosedIcon className="w-4 h-4" />
-                        <span className="text-sm">Private</span>
-                      </div>
-                    ) : null}
                   </div>
 
                   <div className="flex flex-wrap gap-2 mb-4">

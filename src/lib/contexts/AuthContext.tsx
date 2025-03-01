@@ -11,7 +11,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   AuthError,
-  signInWithRedirect
+  signInWithRedirect,
+  Auth
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/firebase';
 import { clearAuthSessionStorage, detectAuthRedirectLoop, logAuthState, resetRedirectCount, supportsPopups } from '@/lib/utils/authUtils';
@@ -29,12 +30,12 @@ const logger = {
 };
 
 // Add to window for debugging only in browser environment
-if (isBrowser) {
+if (isBrowser && auth) {
   (window as any).debug = (...args: any[]) => logger.debug(...args);
   (window as any).authLogger = logger;
   (window as any).monitorAuthState = () => {
     const getState = () => ({
-      user: auth.currentUser,
+      user: auth?.currentUser || null,
       loading: false,
       isCheckingRedirect: false,
       sessionStorage: {
@@ -55,7 +56,7 @@ if (isBrowser) {
   };
   (window as any).__AUTH_STATE__ = {
     getState: () => ({
-      user: auth.currentUser,
+      user: auth?.currentUser || null,
       loading: false,
       isCheckingRedirect: false,
       sessionStorage: {
@@ -99,14 +100,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Consolidated redirect result handler
   useEffect(() => {
-    if (!isBrowser) return;
+    if (!isBrowser || !auth) {
+      setLoading(false);
+      return;
+    }
 
     const handleRedirectResult = async () => {
       try {
         logger.debug('Checking redirect result');
         
         // Wait for Firebase to initialize
-        await auth.authStateReady();
+        await auth!.authStateReady();
         
         // Check if we have a pending sign-in attempt
         const hasSignInAttempt = sessionStorage.getItem('signInAttempt') === 'true';
@@ -117,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           hasSignInAttempt,
           signInTimestamp,
           authComplete,
-          currentUser: auth.currentUser?.email || null,
+          currentUser: auth!.currentUser?.email || null,
           currentTime: new Date().toISOString()
         });
 
@@ -127,12 +131,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           sessionStorage.removeItem('authComplete');
           
           // If we have a user, we're good
-          if (auth.currentUser) {
+          if (auth!.currentUser) {
             logger.info('User already authenticated after redirect', {
-              email: auth.currentUser.email,
-              uid: auth.currentUser.uid
+              email: auth!.currentUser.email,
+              uid: auth!.currentUser.uid
             });
-            setUser(auth.currentUser);
+            setUser(auth!.currentUser);
             resetRedirectCount();
             clearAuthSessionStorage();
             setLoading(false);
@@ -159,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Get the redirect result
-        const result = await getRedirectResult(auth);
+        const result = await getRedirectResult(auth!);
         
         if (result?.user) {
           logger.info('User authenticated via redirect', {
@@ -186,7 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsCheckingRedirect(false);
         
         if (error.code === 'auth/invalid-credential') {
-          await auth.signOut().catch(e => logger.error('Error signing out:', e));
+          await auth!.signOut().catch(e => logger.error('Error signing out:', e));
         }
       }
     };
@@ -196,16 +200,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Listen for auth state changes - only in browser
   useEffect(() => {
-    if (!isBrowser) return;
+    if (!isBrowser || !auth) {
+      setLoading(false);
+      return;
+    }
 
     logger.debug('Setting up auth state listener with state', {
       isCheckingRedirect,
       loading,
-      currentUser: auth.currentUser?.email || null,
+      currentUser: auth!.currentUser?.email || null,
       timestamp: new Date().toISOString()
     });
 
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth!, (currentUser) => {
       logger.info('Auth state changed', {
         hasUser: !!currentUser,
         email: currentUser?.email,
@@ -248,130 +255,119 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logAuthState(currentUser, loading);
     }, (error: any) => {
       logger.error('Auth state change error:', error, {
-        code: error?.code || 'unknown',
-        name: error?.name || 'Error',
-        stack: error?.stack || 'No stack trace',
         timestamp: new Date().toISOString()
       });
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [loading, isCheckingRedirect]); // Re-run if loading or isCheckingRedirect changes
+
+  // Set up persistence
+  useEffect(() => {
+    if (!isBrowser || !auth) return;
+
+    const setupPersistence = async () => {
+      try {
+        await setPersistence(auth!, browserLocalPersistence);
+        logger.debug('Set persistence to local');
+      } catch (error) {
+        logger.error('Error setting persistence:', error);
+      }
+    };
+
+    setupPersistence();
+  }, []); // Run once on mount
+
+  const signInWithGoogle = async () => {
+    if (!isBrowser || !auth) {
+      console.error('Firebase Auth is not initialized or not in browser environment');
+      return;
+    }
+
+    try {
+      logger.debug('Starting Google sign in');
+      
+      // Mark that we're attempting to sign in
+      sessionStorage.setItem('signInAttempt', 'true');
+      sessionStorage.setItem('signInTimestamp', new Date().toISOString());
+      
+      // Increment redirect count to detect loops
+      const currentCount = parseInt(sessionStorage.getItem('authRedirectCount') || '0', 10);
+      sessionStorage.setItem('authRedirectCount', (currentCount + 1).toString());
+      sessionStorage.setItem('lastRedirectTime', new Date().toISOString());
+      
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
+      // Determine if we should use popup or redirect
+      const usePopup = supportsPopups();
+      
+      if (usePopup) {
+        logger.debug('Using popup for sign in');
+        const result = await signInWithPopup(auth!, provider);
+        
+        if (result.user) {
+          logger.info('User authenticated via popup', {
+            email: result.user.email,
+            uid: result.user.uid,
+            provider: result.user.providerData[0]?.providerId
+          });
+          
+          setUser(result.user);
+          clearAuthSessionStorage();
+        }
+      } else {
+        logger.debug('Using redirect for sign in');
+        await signInWithRedirect(auth!, provider);
+        // Control flow will leave this function as the page redirects
+      }
+    } catch (error: any) {
+      logger.error('Error signing in with Google:', error);
+      
+      // Clear sign in attempt
+      clearAuthSessionStorage();
       
       if (isFirebaseAuthError(error)) {
         setAuthError(error);
-      } else {
-        setAuthError(null);
-      }
-      
-      // Ensure we're not stuck in loading state
-      if (loading) {
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      logger.debug('Cleaning up auth state listener', {
-        timestamp: new Date().toISOString(),
-        hadUser: !!auth.currentUser
-      });
-      unsubscribe();
-    };
-  }, [loading, isCheckingRedirect]);
-
-  // Improved Google sign-in implementation with better popup handling
-  const signInWithGoogle = async () => {
-    try {
-      logger.info('Starting Google sign-in');
-      
-      // Clear any previous state
-      clearAuthSessionStorage();
-      setAuthError(null);
-      setLoading(true);
-      
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ 
-        prompt: 'select_account',
-        include_granted_scopes: 'true',
-        access_type: 'offline'
-      });
-      
-      // Set auth persistence to local to maintain the session
-      await setPersistence(auth, browserLocalPersistence);
-      
-      // Check if we're on localhost
-      const isLocalhost = window.location.hostname === 'localhost' || 
-                         window.location.hostname === '127.0.0.1';
-      
-      // For localhost, try popup first
-      if (isLocalhost && supportsPopups()) {
-        try {
-          logger.info('Attempting popup sign-in on localhost');
-          const result = await signInWithPopup(auth, provider);
+        
+        // Handle specific error codes
+        if (error.code === 'auth/popup-closed-by-user') {
+          logger.warn('User closed the popup');
+        } else if (error.code === 'auth/popup-blocked') {
+          logger.warn('Popup was blocked, trying redirect');
           
-          if (result?.user) {
-            logger.info('User signed in successfully with popup', {
-              email: result.user.email,
-              uid: result.user.uid
-            });
-            setUser(result.user);
-            setLoading(false);
-            return; // Exit early on successful popup sign-in
-          }
-        } catch (popupError: any) {
-          logger.warn('Popup sign-in error:', popupError);
-          
-          // Fall back to redirect if popup fails
-          if (popupError.code === 'auth/popup-blocked' || 
-              popupError.code === 'auth/cancelled-popup-request' ||
-              popupError.code === 'auth/popup-closed-by-user') {
-            logger.info('Popup was blocked or closed, falling back to redirect');
-            // Continue to redirect flow
-          } else {
-            // For other errors, throw
-            setLoading(false);
-            throw popupError;
+          try {
+            // Mark that we're attempting to sign in
+            sessionStorage.setItem('signInAttempt', 'true');
+            sessionStorage.setItem('signInTimestamp', new Date().toISOString());
+            
+            const provider = new GoogleAuthProvider();
+            await signInWithRedirect(auth!, provider);
+          } catch (redirectError) {
+            logger.error('Error with redirect after popup blocked:', redirectError);
+            clearAuthSessionStorage();
           }
         }
       }
-      
-      // For production or if popup failed, use redirect
-      logger.info('Using redirect sign-in');
-      
-      // Store that we're attempting a sign-in
-      sessionStorage.setItem('signInAttempt', 'true');
-      sessionStorage.setItem('signInTimestamp', Date.now().toString());
-      
-      // Use redirect sign-in
-      await signInWithRedirect(auth, provider);
-      
-      // Note: The code execution won't reach here in the redirect flow
-      // as the page will be redirected to Google
-      
-    } catch (error: any) {
-      logger.error('Error in Google sign-in:', error);
-      clearAuthSessionStorage();
-      setLoading(false);
-      throw error;
     }
   };
 
   const signOut = async () => {
+    if (!auth) {
+      console.error('Firebase Auth is not initialized');
+      return;
+    }
+    
     try {
-      logger.log('Signing out');
-      
-      // Clear any auth-related session storage before signing out
-      clearAuthSessionStorage();
-      
-      await firebaseSignOut(auth);
-      logger.log('Sign out successful');
-      
-      // Force refresh the page after sign out to ensure clean state
-      if (isBrowser) {
-        // Wait a moment before refreshing to allow state updates
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 500);
-      }
+      logger.debug('Signing out');
+      await firebaseSignOut(auth!);
+      setUser(null);
+      logger.info('User signed out');
     } catch (error) {
       logger.error('Error signing out:', error);
-      throw error;
     }
   };
 
@@ -383,9 +379,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 };

@@ -5,8 +5,18 @@ export async function GET(request: NextRequest) {
   // Check API key for security
   const url = new URL(request.url);
   const apiKey = url.searchParams.get("apiKey");
-    
-  if (apiKey !== process.env.ADMIN_API_KEY) {
+  
+  // Validate that the admin API key is set in environment variables
+  if (!process.env.ADMIN_API_KEY) {
+    console.error("ADMIN_API_KEY is not set in environment variables");
+    return NextResponse.json(
+      { success: false, error: "Server configuration error" },
+      { status: 500 }
+    );
+  }
+  
+  // Security check with constant-time comparison to prevent timing attacks
+  if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
     return NextResponse.json(
       { success: false, error: "Unauthorized" },
       { status: 401 }

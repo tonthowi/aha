@@ -1,26 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase/firebase";
-import { collection, getDocs, doc, updateDoc, query, where } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, query, where, Firestore } from "firebase/firestore";
 
 // This API route will update all existing posts to include authorId
 // It's a one-time migration script that should be run manually
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if Firestore is initialized
+    if (!db) {
+      return NextResponse.json(
+        { success: false, error: "Firebase Firestore is not initialized" },
+        { status: 500 }
+      );
+    }
+
     // Check for a secret key to prevent unauthorized access
     const url = new URL(request.url);
     const secretKey = url.searchParams.get("key");
     
-    // Simple security check - in production, use a more secure method
-    if (secretKey !== process.env.MIGRATION_SECRET_KEY) {
+    // Validate that the migration secret key is set in environment variables
+    if (!process.env.MIGRATION_SECRET_KEY) {
+      console.error("MIGRATION_SECRET_KEY is not set in environment variables");
+      return NextResponse.json(
+        { success: false, error: "Server configuration error" },
+        { status: 500 }
+      );
+    }
+    
+    // Security check with constant-time comparison to prevent timing attacks
+    if (!secretKey || secretKey !== process.env.MIGRATION_SECRET_KEY) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
       );
     }
     
+    // Since we've checked db is not undefined, we can safely use it
+    const firestore = db as Firestore;
+    
     // Get all posts
-    const postsRef = collection(db, "posts");
+    const postsRef = collection(firestore, "posts");
     const postsSnapshot = await getDocs(postsRef);
     
     let updatedCount = 0;
@@ -41,7 +61,7 @@ export async function GET(request: NextRequest) {
       try {
         // Find the user by name to get their ID
         // This is a best-effort approach since we're matching by display name
-        const usersRef = collection(db, "users");
+        const usersRef = collection(firestore, "users");
         const q = query(usersRef, where("displayName", "==", postData.authorName));
         const userSnapshot = await getDocs(q);
         
@@ -51,7 +71,7 @@ export async function GET(request: NextRequest) {
           const userId = userData.uid;
           
           // Update the post with the authorId
-          const postRef = doc(db, "posts", postId);
+          const postRef = doc(firestore, "posts", postId);
           await updateDoc(postRef, {
             authorId: userId
           });

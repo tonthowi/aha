@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase/firebase";
-import { collection, setDoc, doc, getDocs, query, limit } from "firebase/firestore";
+import { collection, setDoc, doc, getDocs, query, limit, Firestore } from "firebase/firestore";
 import { PostRecord } from "@/lib/types/schema";
 
 // Initial seed data
@@ -46,19 +46,40 @@ const initialPosts: Omit<PostRecord, 'id'>[] = [
 // This is a protected admin route, only for development/testing
 export async function GET(request: NextRequest) {
   try {
+    // Check if Firestore is initialized
+    if (!db) {
+      return NextResponse.json(
+        { success: false, error: "Firebase Firestore is not initialized" },
+        { status: 500 }
+      );
+    }
+    
     // Check API key for security
     const url = new URL(request.url);
     const apiKey = url.searchParams.get("apiKey");
     
-    if (apiKey !== process.env.ADMIN_API_KEY) {
+    // Validate that the admin API key is set in environment variables
+    if (!process.env.ADMIN_API_KEY) {
+      console.error("ADMIN_API_KEY is not set in environment variables");
+      return NextResponse.json(
+        { success: false, error: "Server configuration error" },
+        { status: 500 }
+      );
+    }
+    
+    // Security check with constant-time comparison to prevent timing attacks
+    if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
       );
     }
 
+    // Since we've checked db is not undefined, we can safely use it
+    const firestore = db as Firestore;
+
     // First check if there are any existing posts, to avoid duplicate seeding
-    const postsRef = collection(db, "posts");
+    const postsRef = collection(firestore, "posts");
     const postsQuery = query(postsRef, limit(1));
     const postsSnapshot = await getDocs(postsQuery);
     
@@ -73,7 +94,7 @@ export async function GET(request: NextRequest) {
     const seedResults = await Promise.all(
       initialPosts.map(async (post, index) => {
         const id = `seed-post-${index + 1}`;
-        await setDoc(doc(db, "posts", id), {
+        await setDoc(doc(firestore, "posts", id), {
           ...post,
           id,
         });

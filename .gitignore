@@ -41,3 +41,18 @@ next-env.d.ts
 /.firebase/
 firebase-debug.log
 ui-debug.log
+# Firebase service account files
+*-service-account.json
+*-firebase-adminsdk-*.json
+# Firebase local emulator data
+firebase-data/
+firestore-debug.log
+pubsub-debug.log
+# Firebase cache
+.firebase/
+# Firebase config with actual values
+.runtimeconfig.json
+
+.cursorrules
+.replit
+

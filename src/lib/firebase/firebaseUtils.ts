@@ -3,6 +3,7 @@ import {
   signOut,
   GoogleAuthProvider,
   signInWithPopup,
+  Auth
 } from "firebase/auth";
 import {
   collection,
@@ -24,8 +25,9 @@ import {
   QuerySnapshot,
   serverTimestamp,
   getFirestore,
+  Firestore
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, FirebaseStorage } from "firebase/storage";
 import { 
   PostRecord, 
   UserRecord, 
@@ -35,9 +37,18 @@ import {
 } from "@/lib/types/schema";
 
 // Auth functions
-export const logoutUser = () => signOut(auth);
+export const logoutUser = () => {
+  if (!auth) {
+    throw new Error("Firebase Auth is not initialized");
+  }
+  return signOut(auth);
+};
 
 export const signInWithGoogle = async () => {
+  if (!auth) {
+    throw new Error("Firebase Auth is not initialized");
+  }
+  
   const provider = new GoogleAuthProvider();
   try {
     const result = await signInWithPopup(auth, provider);
@@ -49,8 +60,13 @@ export const signInWithGoogle = async () => {
 
 // User management
 export const createUserProfile = async (userData: Omit<UserRecord, 'createdAt' | 'updatedAt'>) => {
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+  
   try {
-    const userRef = doc(db, "users", userData.uid);
+    const firestore = db as Firestore;
+    const userRef = doc(firestore, "users", userData.uid);
     const timestamp = new Date().toISOString();
     
     await setDoc(userRef, {
@@ -66,8 +82,13 @@ export const createUserProfile = async (userData: Omit<UserRecord, 'createdAt' |
 };
 
 export const getUserProfile = async (uid: string): Promise<UserRecord | null> => {
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+  
   try {
-    const userDoc = await getDoc(doc(db, "users", uid));
+    const firestore = db as Firestore;
+    const userDoc = await getDoc(doc(firestore, "users", uid));
     return userDoc.exists() ? userDoc.data() as UserRecord : null;
   } catch (error) {
     throw error;
@@ -75,8 +96,13 @@ export const getUserProfile = async (uid: string): Promise<UserRecord | null> =>
 };
 
 export const updateUserProfile = async (uid: string, data: Partial<Omit<UserRecord, 'uid' | 'createdAt'>>) => {
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+  
   try {
-    const userRef = doc(db, "users", uid);
+    const firestore = db as Firestore;
+    const userRef = doc(firestore, "users", uid);
     await updateDoc(userRef, {
       ...data,
       updatedAt: new Date().toISOString(),
@@ -89,6 +115,7 @@ export const updateUserProfile = async (uid: string, data: Partial<Omit<UserReco
 // Post management
 export const createPost = async (postData: any): Promise<string> => {
   try {
+    // Use getFirestore() directly to avoid the undefined check
     const db = getFirestore();
     const postsCollection = collection(db, 'posts');
     
@@ -123,8 +150,13 @@ export const getPosts = async (options?: {
   orderDirection?: 'asc' | 'desc',
   filterByAuthor?: string
 }) => {
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+  
   try {
-    let postsQuery = collection(db, "posts");
+    const firestore = db as Firestore;
+    let postsQuery = collection(firestore, "posts");
     
     // Build query based on options
     let constraints: any[] = [];
@@ -152,8 +184,13 @@ export const getPosts = async (options?: {
 };
 
 export const getPostById = async (postId: string): Promise<PostRecord | null> => {
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+  
   try {
-    const postDoc = await getDoc(doc(db, "posts", postId));
+    const firestore = db as Firestore;
+    const postDoc = await getDoc(doc(firestore, "posts", postId));
     if (!postDoc.exists()) {
       return null;
     }
@@ -171,8 +208,13 @@ export const getPostById = async (postId: string): Promise<PostRecord | null> =>
 };
 
 export const updatePost = async (postId: string, data: Partial<Omit<PostRecord, 'id' | 'authorId' | 'createdAt'>>) => {
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+  
   try {
-    const postRef = doc(db, "posts", postId);
+    const firestore = db as Firestore;
+    const postRef = doc(firestore, "posts", postId);
     await updateDoc(postRef, {
       ...data,
       updatedAt: new Date().toISOString(),
@@ -183,8 +225,13 @@ export const updatePost = async (postId: string, data: Partial<Omit<PostRecord, 
 };
 
 export const deletePost = async (postId: string) => {
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+  
   try {
-    await deleteDoc(doc(db, "posts", postId));
+    const firestore = db as Firestore;
+    await deleteDoc(doc(firestore, "posts", postId));
   } catch (error) {
     throw error;
   }
@@ -192,11 +239,16 @@ export const deletePost = async (postId: string) => {
 
 // Interaction management (likes, bookmarks)
 export const toggleLike = async (postId: string, userId: string): Promise<boolean> => {
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+  
   try {
-    const likeRef = doc(db, "likes", `${userId}_${postId}`);
+    const firestore = db as Firestore;
+    const likeRef = doc(firestore, "likes", `${userId}_${postId}`);
     const likeDoc = await getDoc(likeRef);
     
-    const postRef = doc(db, "posts", postId);
+    const postRef = doc(firestore, "posts", postId);
     const postDoc = await getDoc(postRef);
     
     if (!postDoc.exists()) {
@@ -231,11 +283,16 @@ export const toggleLike = async (postId: string, userId: string): Promise<boolea
 };
 
 export const toggleBookmark = async (postId: string, userId: string): Promise<boolean> => {
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+  
   try {
-    const bookmarkRef = doc(db, "bookmarks", `${userId}_${postId}`);
+    const firestore = db as Firestore;
+    const bookmarkRef = doc(firestore, "bookmarks", `${userId}_${postId}`);
     const bookmarkDoc = await getDoc(bookmarkRef);
     
-    const postRef = doc(db, "posts", postId);
+    const postRef = doc(firestore, "posts", postId);
     const postDoc = await getDoc(postRef);
     
     if (!postDoc.exists()) {
@@ -248,7 +305,7 @@ export const toggleBookmark = async (postId: string, userId: string): Promise<bo
       await updateDoc(postRef, {
         bookmarkCount: Math.max(0, (postDoc.data() as PostRecord).bookmarkCount - 1),
       });
-      return false; // Indicates the post is now un-bookmarked
+      return false; // Indicates the post is now unbookmarked
     } else {
       // Add bookmark
       const timestamp = new Date().toISOString();
@@ -270,20 +327,30 @@ export const toggleBookmark = async (postId: string, userId: string): Promise<bo
 };
 
 export const getUserLikes = async (userId: string): Promise<string[]> => {
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+  
   try {
-    const q = query(collection(db, "likes"), where("userId", "==", userId));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => (doc.data() as LikeRecord).postId);
+    const firestore = db as Firestore;
+    const likesQuery = query(collection(firestore, "likes"), where("userId", "==", userId));
+    const likesSnapshot = await getDocs(likesQuery);
+    return likesSnapshot.docs.map(doc => doc.data().postId);
   } catch (error) {
     throw error;
   }
 };
 
 export const getUserBookmarks = async (userId: string): Promise<string[]> => {
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+  
   try {
-    const q = query(collection(db, "bookmarks"), where("userId", "==", userId));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => (doc.data() as BookmarkRecord).postId);
+    const firestore = db as Firestore;
+    const bookmarksQuery = query(collection(firestore, "bookmarks"), where("userId", "==", userId));
+    const bookmarksSnapshot = await getDocs(bookmarksQuery);
+    return bookmarksSnapshot.docs.map(doc => doc.data().postId);
   } catch (error) {
     throw error;
   }
@@ -291,24 +358,43 @@ export const getUserBookmarks = async (userId: string): Promise<string[]> => {
 
 // Storage functions
 export const uploadFile = async (file: File, path: string, metadata?: Record<string, any>) => {
-  const storageRef = ref(storage, path);
-  await uploadBytes(storageRef, file, { customMetadata: metadata });
-  return getDownloadURL(storageRef);
+  if (!storage) {
+    throw new Error("Firebase Storage is not initialized");
+  }
+  
+  try {
+    const firebaseStorage = storage as FirebaseStorage;
+    const storageRef = ref(firebaseStorage, path);
+    const snapshot = await uploadBytes(storageRef, file, metadata);
+    return await getDownloadURL(snapshot.ref);
+  } catch (error) {
+    throw error;
+  }
 };
 
 // Realtime listeners
 export const subscribeToUserLikes = (userId: string, callback: (likedPostIds: string[]) => void) => {
-  const q = query(collection(db, "likes"), where("userId", "==", userId));
-  return onSnapshot(q, (snapshot) => {
-    const likedPostIds = snapshot.docs.map(doc => (doc.data() as LikeRecord).postId);
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+  
+  const firestore = db as Firestore;
+  const likesQuery = query(collection(firestore, "likes"), where("userId", "==", userId));
+  return onSnapshot(likesQuery, (snapshot) => {
+    const likedPostIds = snapshot.docs.map(doc => doc.data().postId);
     callback(likedPostIds);
   });
 };
 
 export const subscribeToUserBookmarks = (userId: string, callback: (bookmarkedPostIds: string[]) => void) => {
-  const q = query(collection(db, "bookmarks"), where("userId", "==", userId));
-  return onSnapshot(q, (snapshot) => {
-    const bookmarkedPostIds = snapshot.docs.map(doc => (doc.data() as BookmarkRecord).postId);
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+  
+  const firestore = db as Firestore;
+  const bookmarksQuery = query(collection(firestore, "bookmarks"), where("userId", "==", userId));
+  return onSnapshot(bookmarksQuery, (snapshot) => {
+    const bookmarkedPostIds = snapshot.docs.map(doc => doc.data().postId);
     callback(bookmarkedPostIds);
   });
 };
@@ -317,22 +403,29 @@ export const subscribeToPostUpdates = (callback: (posts: PostRecord[]) => void, 
   limit?: number,
   filterByAuthor?: string
 }) => {
-  let constraints: any[] = [orderBy("createdAt", "desc")];
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+  
+  const firestore = db as Firestore;
+  let constraints: any[] = [];
   
   if (options?.filterByAuthor) {
     constraints.push(where("authorId", "==", options.filterByAuthor));
   }
   
+  constraints.push(orderBy("createdAt", "desc"));
+  
   if (options?.limit) {
     constraints.push(limit(options.limit));
   }
   
-  const q = query(collection(db, "posts"), ...constraints);
+  const postsQuery = query(collection(firestore, "posts"), ...constraints);
   
-  return onSnapshot(q, (snapshot) => {
+  return onSnapshot(postsQuery, (snapshot) => {
     const posts = snapshot.docs.map(doc => {
-      // Ensure the document has an id field that matches its document ID
       const data = doc.data() as PostRecord;
+      // Ensure the document has an id field that matches its document ID
       if (!data.id) {
         data.id = doc.id;
       }

@@ -37,6 +37,12 @@ To keep your API keys and credentials secure:
 3. Add API key restrictions in your Google Cloud Console to limit usage
 4. Regularly rotate your API keys, especially if you suspect they may have been compromised
 5. Use `.gitignore` to prevent committing sensitive files
+6. If you discover that credentials have been accidentally committed to your repository:
+   - Immediately revoke and regenerate all exposed credentials
+   - Remove the credentials from your Git history (consider using tools like BFG Repo-Cleaner)
+   - Audit your application for any other potential security issues
+7. For production environments, consider using a secrets management service instead of environment files
+8. Implement proper access controls for admin routes and sensitive operations
 
 ## Technologies used
 This doesn't really matter, but is useful for the AI to understand more about this project. We are using the following technologies

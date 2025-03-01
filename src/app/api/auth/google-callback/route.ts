@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/firebase/firebase";
+import { Auth } from "firebase/auth";
 
 export async function GET(request: Request) {
   try {
+    // Check if Firebase Auth is initialized
+    if (!auth) {
+      console.error("Firebase Auth is not initialized");
+      // Still proceed with the callback since we're not directly using auth in this function
+    }
+    
     // Get the URL and parse the state parameter
     const url = new URL(request.url);
     const state = url.searchParams.get("state");

@@ -179,7 +179,7 @@ export function TILFeed() {
             <MasonryGridSkeleton itemCount={6} />
           ) : filteredPosts.length === 0 ? (
             <div
-              className="max-w-2xl mx-auto flex flex-col items-center justify-center py-12 px-6 card-shadow-hover"
+              className="max-w-2xl mx-auto flex flex-col items-center justify-center py-12 px-6"
             >
               <div className="text-center">
                 <div className="relative w-40 h-40 mx-auto">

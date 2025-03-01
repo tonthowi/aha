@@ -1,14 +1,25 @@
 import { NextResponse } from "next/server";
 import Replicate from "replicate";
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-});
+// Initialize Replicate only if the API token is available
+const replicateApiToken = process.env.REPLICATE_API_TOKEN;
+const replicate = replicateApiToken 
+  ? new Replicate({ auth: replicateApiToken })
+  : null;
 
 export async function POST(request: Request) {
-  if (!process.env.REPLICATE_API_TOKEN) {
-    throw new Error(
-      "The REPLICATE_API_TOKEN environment variable is not set. See README.md for instructions on how to set it."
+  if (!replicateApiToken) {
+    return NextResponse.json(
+      { error: "The REPLICATE_API_TOKEN environment variable is not set. See README.md for instructions on how to set it." },
+      { status: 500 }
+    );
+  }
+
+  // Ensure replicate is initialized
+  if (!replicate) {
+    return NextResponse.json(
+      { error: "Failed to initialize Replicate client." },
+      { status: 500 }
     );
   }
 

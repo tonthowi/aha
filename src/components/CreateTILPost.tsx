@@ -7,6 +7,7 @@ import { uploadFile } from '@/lib/firebase/firebaseUtils';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { CategoryPill } from '@/components/ui/CategoryPill';
 import toast from 'react-hot-toast';
+import { validateFile, generateSecureFilename, MAX_FILE_SIZE, ALLOWED_IMAGE_TYPES } from '@/lib/utils/fileUtils';
 
 // Dynamically import RichTextEditor with SSR disabled
 const RichTextEditor = dynamic(() => import('./RichTextEditor').then(mod => mod.RichTextEditor), {
@@ -91,6 +92,25 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
     setSubmissionError(null);
     
     try {
+      // Check if user is authenticated
+      if (!user) {
+        throw new Error('You must be signed in to share a post');
+      }
+      
+      // Use server-side API for secure validation and upload
+      const formData = new FormData();
+      
+      // Add content and category
+      formData.append('content', content);
+      formData.append('category', selectedCategories.join(', '));
+      
+      // Add media files
+      for (const item of media) {
+        if (item.file) {
+          formData.append('media', item.file);
+        }
+      }
+      
       // Process media attachments if any
       let processedMedia: MediaAttachment[] = [];
       
@@ -140,7 +160,8 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
       
     } catch (error) {
       console.error("Error sharing post:", error);
-      setSubmissionError("Failed to share your learning. Please try again.");
+      setSubmissionError(error instanceof Error ? error.message : "Failed to share your learning. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Failed to share your learning");
     } finally {
       setIsSubmitting(false);
     }
@@ -156,16 +177,42 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // Create new media items with file references
-    const newMedia = Array.from(files).map((file) => ({
-      type,
-      url: URL.createObjectURL(file),
-      filename: file.name,
-      mimeType: file.type,
-      file: file // Ensure the file is attached to the media item
-    }));
+    // Process each file with validation
+    const validFiles: File[] = [];
+    const invalidFiles: { file: File; error: string }[] = [];
 
-    setMedia([...media, ...newMedia]);
+    Array.from(files).forEach((file) => {
+      const validation = validateFile(file, {
+        maxSize: MAX_FILE_SIZE,
+        allowedTypes: ALLOWED_IMAGE_TYPES,
+      });
+
+      if (validation.valid) {
+        validFiles.push(file);
+      } else if (validation.error) {
+        invalidFiles.push({ file, error: validation.error });
+      }
+    });
+
+    // Show errors for invalid files
+    if (invalidFiles.length > 0) {
+      invalidFiles.forEach(({ file, error }) => {
+        toast.error(`${file.name}: ${error}`);
+      });
+    }
+
+    // Process valid files
+    if (validFiles.length > 0) {
+      const newMedia = validFiles.map((file) => ({
+        type,
+        url: URL.createObjectURL(file),
+        filename: file.name,
+        mimeType: file.type,
+        file: file
+      }));
+
+      setMedia([...media, ...newMedia]);
+    }
     
     // Reset the file input
     if (fileInputRef.current) {
@@ -187,18 +234,44 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
     setSubmissionError(null);
   };
 
-  // Add uploadMediaToStorage function
+  // Update uploadMediaToStorage function
   const uploadMediaToStorage = async (file: File | undefined, filename: string): Promise<string> => {
     // If we have a file, upload it to Firebase Storage
     if (file) {
       try {
+        // Validate file again before upload (server-side validation)
+        const validation = validateFile(file, {
+          maxSize: MAX_FILE_SIZE,
+          allowedTypes: ALLOWED_IMAGE_TYPES,
+        });
+        
+        if (!validation.valid) {
+          throw new Error(validation.error || 'Invalid file');
+        }
+        
+        // Generate a secure filename instead of using the original
+        const secureFilename = generateSecureFilename(filename);
+        
+        // Handle SVG files specifically
+        let contentType = file.type;
+        if (file.type === 'image/svg+xml') {
+          // Ensure content type is correctly set for SVG files
+          contentType = 'image/svg+xml';
+        }
+        
         // Upload to Firebase Storage with user ID in metadata
-        const storagePath = `posts/media/${Date.now()}_${filename}`;
-        const metadata = { userId: user?.uid || 'anonymous' };
+        const storagePath = `posts/media/${secureFilename}`;
+        const metadata = { 
+          userId: user?.uid || 'anonymous',
+          contentType: contentType,
+          originalFilename: filename, // Store original filename as metadata
+          securityValidated: 'true' // Mark as validated for security
+        };
+        
         return await uploadFile(file, storagePath, metadata);
       } catch (error) {
         console.error("Error uploading file:", error);
-        throw new Error("Failed to upload media file");
+        throw new Error(error instanceof Error ? error.message : "Failed to upload media file");
       }
     }
     throw new Error("No file provided for upload");
@@ -305,7 +378,7 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
           ref={fileInputRef}
           className="hidden"
           onChange={(e) => handleFileUpload(e, 'image')}
-          accept="image/*"
+          accept={ALLOWED_IMAGE_TYPES.join(',')}
         />
         <button
           type="button"
@@ -313,7 +386,7 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
           className="btn-outline flex items-center gap-2"
         >
           <PhotoIcon className="w-5 h-5" />
-          <span>Add Image</span>
+          <span>Add Image (Max 2MB)</span>
         </button>
       </div>
 

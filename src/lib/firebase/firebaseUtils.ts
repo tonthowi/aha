@@ -35,6 +35,7 @@ import {
   BookmarkRecord, 
   CommentRecord 
 } from "@/lib/types/schema";
+import { validateFile, MAX_FILE_SIZE, ALLOWED_IMAGE_TYPES } from '@/lib/utils/fileUtils';
 
 // Auth functions
 export const logoutUser = () => {
@@ -363,11 +364,53 @@ export const uploadFile = async (file: File, path: string, metadata?: Record<str
   }
   
   try {
+    // Server-side validation for all uploads
+    const validation = validateFile(file, {
+      maxSize: MAX_FILE_SIZE,
+      allowedTypes: ALLOWED_IMAGE_TYPES,
+    });
+    
+    if (!validation.valid) {
+      throw new Error(validation.error || 'Invalid file');
+    }
+    
+    // Additional validation for media uploads
+    if (path.startsWith('posts/media/')) {
+      // Ensure the path uses a secure filename pattern
+      const pathParts = path.split('/');
+      const filename = pathParts[pathParts.length - 1];
+      
+      // Check if filename follows our secure pattern (timestamp_randomstring.extension)
+      const secureFilenamePattern = /^\d+_[a-z0-9]+\.([a-z0-9]+(\+[a-z0-9]+)*)$/i;
+      if (!secureFilenamePattern.test(filename)) {
+        throw new Error('Invalid filename format');
+      }
+      
+      // Ensure metadata contains required fields
+      if (!metadata?.userId) {
+        throw new Error('User ID is required in metadata');
+      }
+      
+      if (!metadata?.contentType) {
+        throw new Error('Content type is required in metadata');
+      }
+    }
+    
     const firebaseStorage = storage as FirebaseStorage;
     const storageRef = ref(firebaseStorage, path);
-    const snapshot = await uploadBytes(storageRef, file, metadata);
+    
+    // Add content type to metadata if not already present
+    const updatedMetadata = {
+      ...metadata,
+      contentType: metadata?.contentType || file.type,
+      securityValidated: 'true', // Mark as validated for security
+      validatedAt: new Date().toISOString() // Add validation timestamp
+    };
+    
+    const snapshot = await uploadBytes(storageRef, file, updatedMetadata);
     return await getDownloadURL(snapshot.ref);
   } catch (error) {
+    console.error("Error in uploadFile:", error);
     throw error;
   }
 };

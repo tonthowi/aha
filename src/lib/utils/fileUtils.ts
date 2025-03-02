@@ -11,7 +11,7 @@ export const ALLOWED_IMAGE_TYPES = [
   'image/png',
   'image/gif',
   'image/webp',
-  'image/svg+xml',
+  // 'image/svg+xml', // Removed for security reasons
 ];
 
 /**
@@ -60,15 +60,15 @@ export const generateSecureFilename = (originalFilename: string): string => {
   // Extract file extension
   const fileExtension = originalFilename.split('.').pop()?.toLowerCase() || '';
   
-  // For SVG files, use 'svg' as the extension instead of 'svg+xml'
-  const normalizedExtension = fileExtension === 'svg+xml' ? 'svg' : fileExtension;
+  // Ensure the extension only contains alphanumeric characters
+  const safeExtension = fileExtension.replace(/[^a-z0-9]/gi, '');
   
-  // Generate a random string for the filename
-  const randomString = Math.random().toString(36).substring(2, 15);
+  // Generate a random string for the filename (alphanumeric only)
+  const randomString = Math.random().toString(36).substring(2, 15).replace(/[^a-z0-9]/gi, '');
   
   // Create a timestamp
   const timestamp = Date.now();
   
   // Return the secure filename
-  return `${timestamp}_${randomString}.${normalizedExtension}`;
+  return `${timestamp}_${randomString}.${safeExtension}`;
 }; 

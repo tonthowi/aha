@@ -89,21 +89,13 @@ export async function POST(request: NextRequest) {
           );
         }
         
-        // Generate secure filename
-        const secureFilename = generateSecureFilename(file.name);
-        
-        // Handle SVG files specifically
-        let contentType = file.type;
-        if (file.type === 'image/svg+xml') {
-          // Ensure content type is correctly set for SVG files
-          contentType = 'image/svg+xml';
-        }
+        // Let the uploadFile function handle secure filename generation
+        const storagePath = `posts/media/${file.name}`;
         
         // Upload to Firebase Storage
-        const storagePath = `posts/media/${secureFilename}`;
         const metadata = {
           userId,
-          contentType: contentType,
+          contentType: file.type,
           originalFilename: file.name,
           securityValidated: 'true' // Mark as validated for security
         };

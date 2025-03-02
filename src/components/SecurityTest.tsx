@@ -80,18 +80,11 @@ export const SecurityTest: React.FC = () => {
       // Test file upload if a file is selected
       if (file) {
         try {
-          // Handle SVG files specifically
-          let contentType = file.type;
-          if (file.type === 'image/svg+xml') {
-            // Ensure content type is correctly set for SVG files
-            contentType = 'image/svg+xml';
-          }
-          
           // Attempt to upload an invalid file (bypass client validation)
-          const path = `test/security/${Date.now()}_test.${file.name.split('.').pop()}`;
+          const path = `test/security/${file.name}`;
           const metadata = { 
             // Missing userId to test server-side validation
-            contentType: contentType,
+            contentType: file.type,
             isTest: true
           };
           

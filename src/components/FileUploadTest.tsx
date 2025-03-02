@@ -48,7 +48,7 @@ export const FileUploadTest: React.FC = () => {
     
     try {
       // Test upload
-      const path = `test/uploads/${Date.now()}_${file.name}`;
+      const path = `test/uploads/${file.name}`;
       const metadata = { 
         userId: user?.uid || 'anonymous',
         contentType: file.type,
@@ -78,6 +78,9 @@ export const FileUploadTest: React.FC = () => {
         </p>
         <p className="text-sm text-gray-600 mb-2">
           Allowed types: {ALLOWED_IMAGE_TYPES.map(t => t.replace('image/', '')).join(', ')}
+        </p>
+        <p className="text-sm text-gray-600 mb-2">
+          Note: SVG files are not allowed for security reasons.
         </p>
       </div>
       

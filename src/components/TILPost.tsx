@@ -99,6 +99,31 @@ export const TILPost: React.FC<TILPostProps> = ({
     const showOverlay = thumbnailCount > 4;
     const displayMedia = post.media.slice(0, 4);
 
+    // If there's only one media item, make it fill the container
+    if (thumbnailCount === 1) {
+      const media = displayMedia[0];
+      
+      if (media.type === 'image') {
+        return (
+          <div className="mt-3">
+            <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-gray-100">
+              <Image
+                src={media.url}
+                alt={media.filename || 'Image'}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 50vw"
+                className="object-cover"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        );
+      }
+      
+      // For other media types, we'll just return the default grid layout
+      // This ensures we don't break anything if other media types are added later
+    }
+
     return (
       <div className="grid grid-cols-2 gap-2 mt-3">
         {displayMedia.map((media, index) => {

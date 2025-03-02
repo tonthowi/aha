@@ -29,7 +29,12 @@ export function PostComposer({ onPost }: PostComposerProps) {
       const uploadedMedia = await Promise.all(
         attachments.map(async (file) => {
           const storagePath = `posts/media/${Date.now()}_${file.name}`;
-          const metadata = { userId: user?.uid || 'anonymous' };
+          const metadata = { 
+            userId: user?.uid || 'anonymous',
+            contentType: file.type,
+            originalFilename: file.name,
+            securityValidated: 'true'
+          };
           const url = await uploadFile(file, storagePath, metadata);
           
           let mediaType: 'image' | 'video' | 'audio' | 'file' = 'file';

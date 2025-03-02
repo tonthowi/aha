@@ -139,12 +139,13 @@ export default function PostPage() {
         {post.media.map((item, index) => (
           <div key={index} className="relative">
             {item.type === "image" && (
-              <div className="relative aspect-[16/9]">
+              <div className="relative">
                 <Image
                   src={item.url}
                   alt={item.filename || "Post image"}
-                  fill
-                  className="rounded-2xl object-cover"
+                  width={1200}
+                  height={800}
+                  className="rounded-2xl w-full h-auto"
                   onError={(e) => {
                     // Fallback for failed image loads
                     const imgElement = e.target as HTMLImageElement;
@@ -189,9 +190,9 @@ export default function PostPage() {
         <div className="max-w-2xl mx-auto px-4 py-3">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => router.back()}
+              onClick={() => router.push('/')}
               className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
-              aria-label="Go back"
+              aria-label="Go home"
             >
               <ArrowLeftIcon className="w-5 h-5" />
             </button>

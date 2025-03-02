@@ -380,11 +380,7 @@ export const uploadFile = async (file: File, path: string, metadata?: Record<str
       const pathParts = path.split('/');
       const filename = pathParts[pathParts.length - 1];
       
-      // Check if filename follows our secure pattern (timestamp_randomstring.extension)
-      const secureFilenamePattern = /^\d+_[a-z0-9]+\.([a-z0-9]+(\+[a-z0-9]+)*)$/i;
-      if (!secureFilenamePattern.test(filename)) {
-        throw new Error('Invalid filename format');
-      }
+      console.log('Validating filename:', filename);
       
       // Ensure metadata contains required fields
       if (!metadata?.userId) {
@@ -394,6 +390,20 @@ export const uploadFile = async (file: File, path: string, metadata?: Record<str
       if (!metadata?.contentType) {
         throw new Error('Content type is required in metadata');
       }
+      
+      // Instead of validating the filename format, ensure it's secure by
+      // generating a new secure filename
+      const fileExtension = filename.split('.').pop()?.toLowerCase() || '';
+      const safeExtension = fileExtension.replace(/[^a-z0-9]/gi, '');
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 15).replace(/[^a-z0-9]/gi, '');
+      const secureFilename = `${timestamp}_${randomString}.${safeExtension}`;
+      
+      // Update the path with the secure filename
+      pathParts[pathParts.length - 1] = secureFilename;
+      path = pathParts.join('/');
+      
+      console.log('Using secure filename:', secureFilename);
     }
     
     const firebaseStorage = storage as FirebaseStorage;

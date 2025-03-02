@@ -179,7 +179,12 @@ export default function EditPostPage() {
             
             // Upload to Firebase Storage with user ID in metadata
             const storagePath = `posts/media/${Date.now()}_${item.filename}`;
-            const metadata = { userId: user?.uid || 'anonymous' };
+            const metadata = { 
+              userId: user?.uid || 'anonymous',
+              contentType: item.mimeType,
+              originalFilename: item.filename,
+              securityValidated: 'true'
+            };
             const permanentUrl = await uploadFile(file, storagePath, metadata);
             
             return {
@@ -245,16 +250,37 @@ export default function EditPostPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.back()}
+                onClick={() => router.push(`/post/${postId}`)}
                 className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Go back"
+                aria-label="Go back to post"
               >
                 <ArrowLeftIcon className="w-5 h-5" />
               </button>
               
               <h1 className="text-lg font-semibold">
-                Edit Post
+                Updating Post?
               </h1>
+            </div>
+            
+            {/* Added Save and Cancel buttons to the header */}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => router.push(`/post/${postId}`)}
+                className="btn-outline text-sm py-1.5 px-3"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="edit-post-form"
+                disabled={!isValid || isSaving}
+                className={`btn-primary text-sm py-1.5 px-3 ${
+                  !isValid || isSaving ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </div>
         </div>
@@ -262,11 +288,8 @@ export default function EditPostPage() {
 
       {/* Main content */}
       <main className="max-w-2xl mx-auto px-4 py-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form id="edit-post-form" onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="content" className="block text-sm font-medium text-black mb-2">
-              What did you learn?
-            </label>
             <RichTextEditor
               content={content}
               onChange={setContent}
@@ -372,27 +395,6 @@ export default function EditPostPage() {
               <PhotoIcon className="w-5 h-5" />
               <span>Add Image</span>
             </button>
-          </div>
-
-          <div className="flex justify-end pt-4 border-t border-[#e6e6e6]">
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="btn-outline"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={!isValid || isSaving}
-                className={`btn-primary ${
-                  !isValid || isSaving ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
           </div>
         </form>
       </main>

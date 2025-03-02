@@ -249,21 +249,15 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
           throw new Error(validation.error || 'Invalid file');
         }
         
-        // Generate a secure filename instead of using the original
-        const secureFilename = generateSecureFilename(filename);
-        
-        // Handle SVG files specifically
-        let contentType = file.type;
-        if (file.type === 'image/svg+xml') {
-          // Ensure content type is correctly set for SVG files
-          contentType = 'image/svg+xml';
-        }
+        // We'll let the uploadFile function handle secure filename generation
+        // Just use a basic path with the original filename
+        const storagePath = `posts/media/${filename}`;
+        console.log('Using storage path:', storagePath);
         
         // Upload to Firebase Storage with user ID in metadata
-        const storagePath = `posts/media/${secureFilename}`;
         const metadata = { 
           userId: user?.uid || 'anonymous',
-          contentType: contentType,
+          contentType: file.type,
           originalFilename: filename, // Store original filename as metadata
           securityValidated: 'true' // Mark as validated for security
         };
@@ -280,9 +274,6 @@ export const CreateTILPost: React.FC<CreateTILPostProps> = ({ onSubmit }) => {
   return (
     <div className="space-y-6">
       <div>
-        <label htmlFor="content" className="block text-sm font-medium text-black mb-2">
-          What did you learn today?
-        </label>
         <RichTextEditor
           content={content}
           onChange={setContent}

@@ -15,8 +15,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Today I Learned',
-  description: 'Share your daily learnings with the world',
+  title: 'TIL Snacks',
+  description: 'People sharing tidbits—brief facts you might find surprising or interesting.',
 };
 
 // Add a script to define debug function in the global scope

@@ -224,37 +224,6 @@ a:hover {
   background: rgba(255,144,232,0.2);
 }
 
-.modal {
-  width: 100%;
-  transform: translate(0, 0);
-  overflow: hidden;
-  border-radius: 0.75rem;
-  background: white;
-  border: 1px solid #e6e6e6;
-  box-shadow: 5px 5px 0px 0px rgba(0,0,0,1);
-  transition: all 0.2s;
-}
-
-.modal-header {
-  font-size: 1.125rem;
-  font-weight: bold;
-  color: black;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e6e6e6;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.modal-footer {
-  padding: 1.5rem;
-  border-top: 1px solid #e6e6e6;
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-
 .text-balance {
   text-wrap: balance;
 }

@@ -282,9 +282,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   );
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
+    <div className="rounded-lg overflow-hidden">
       {!readOnly && (
-        <div className="border-b bg-gray-50 p-1.5 flex flex-wrap gap-0.5">
+        <div className="p-1.5 flex flex-wrap gap-0.5">
           <ToolbarButton
             onClick={() => handleFormat(() => editor.chain().focus().toggleBold().run())}
             active={editor?.isActive('bold')}
@@ -426,14 +426,14 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         />
       </div>
 
-      {showCharacterCount && (
+      {/* {showCharacterCount && (
         <div className="text-xs text-gray-500 px-3 py-1.5 border-t">
           {editor?.storage.characterCount.characters()} characters
           {maxLength && ` / ${maxLength}`}
           {' • '}
           {editor?.storage.characterCount.words()} words
         </div>
-      )}
+      )} */}
     </div>
   );
 }; 

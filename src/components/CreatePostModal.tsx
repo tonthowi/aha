@@ -61,10 +61,10 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 className="w-full"
                 style={{ maxWidth: "640px" }}
               >
-                <Dialog.Panel className="w-full transform overflow-hidden rounded-xl bg-white border border-[#e6e6e6] shadow-lg transition-all">
+                <Dialog.Panel className="w-full transform overflow-hidden rounded-md bg-white shadow-lg transition-all p-3">
                   <div className="flex items-center justify-between modal-header">
                     <Dialog.Title as="h3">
-                      Share your learning
+                      Today I Learned
                     </Dialog.Title>
                     <button 
                       onClick={handleClose}
@@ -74,7 +74,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                       <XMarkIcon className="w-5 h-5" />
                     </button>
                   </div>
-                  <div className="modal-body">
+                  <div className="p-2">
                     <CreateTILPost
                       onSubmit={handleSubmit}
                     />
